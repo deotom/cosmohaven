@@ -52,6 +52,8 @@ src/
     Character.tsx / Crew.tsx / crewProfile.ts / species.ts   ลูกเรือ + เผ่าพันธุ์
     ScrapField.tsx      scrap/relic/Survey Beacon + beam เก็บเข้าคลังสินค้า
   hud/TradePanel.tsx    Trade Relay/drydock sale UI และ storage technologies
+  hud/StartMenu.tsx / TutorialOverlay.tsx   Continue/New Game และ flight briefing แบบข้ามได้
+  hud/onboarding.ts  บันทึกสถานะ tutorial แยกจาก autosave
     targets.ts / targetActions.ts / targetScreen.ts / TargetSystem.tsx   ระบบ lock เป้าหมาย + context menu
     EventManager.tsx    spawn อุกกาบาต (physics body)
     upgrades.ts         tier ของ Harvester / Auto-Pilot
@@ -68,6 +70,7 @@ src/
 - เพิ่มค่าใหม่ → ใส่ใน `gameStats`, ทำ setter, และ **copy ใน `readGameStats()`** ถ้าเป็น nested object
   (ไม่งั้น HUD จะได้ reference เดียวกันและไม่เห็นการเปลี่ยน)
 - HC เป็นเงิน; Scrap/Relics/Survey Data อยู่ใน cargo จนขายหรือปลดล็อก progression; autosave ใช้ schema version 1 ใน localStorage ช่องเดียว
+- Tutorial แสดงหลังเริ่มเกมใหม่หรือ Continue ถ้ายังไม่เคยจบ/ข้าม; ค่าที่บันทึกอยู่ใน `cosmohaven.onboarding-complete.v1`
 
 ### 4.2 Sector (ระบบดาว)
 - `Sector` เป็น data ล้วนที่สร้างจาก seed (`mulberry32` ใน `rng.ts`) → reproducible

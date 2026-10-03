@@ -20,6 +20,8 @@ import { DockButton, DockPrompt } from './hud/Warnings'
 import { ShipyardPanel } from './hud/ShipyardPanel'
 import { PauseMenu } from './hud/PauseMenu'
 import { StartMenu } from './hud/StartMenu'
+import { TutorialOverlay } from './hud/TutorialOverlay'
+import { markOnboardingSeen, readOnboardingStatus } from './hud/onboarding'
 import { clearSaveSlot, createSaveSnapshot, readSaveSlot, resetNewGame, restoreSave, writeSaveSlot } from './game/saveGame'
 import {
   assignControlCode,
@@ -139,6 +141,8 @@ export default function App() {
   const [registering, setRegistering] = useState(false)
   const [saveSlot, setSaveSlot] = useState(readSaveSlot)
   const [saveError, setSaveError] = useState<string | null>(saveSlot.error)
+  const [tutorialOpen, setTutorialOpen] = useState(false)
+  const [tutorialStep, setTutorialStep] = useState(0)
   const [paused, setPaused] = useState(false)
   const [difficulty, setDifficulty] = useState(gameStats.difficulty)
   const [initialPreferences] = useState(loadInputPreferences)
@@ -177,6 +181,17 @@ export default function App() {
     setDifficulty(next)
   }, [])
 
+  const finishTutorial = () => {
+    const error = markOnboardingSeen()
+    if (error) setSaveError(error)
+    setTutorialOpen(false)
+  }
+
+  const advanceTutorial = () => {
+    if (tutorialStep >= 3) finishTutorial()
+    else setTutorialStep((step) => step + 1)
+  }
+
   const continueGame = () => {
     if (!saveSlot.save) return
     try {
@@ -188,9 +203,12 @@ export default function App() {
       setTradeOpen(false)
       setInterior(false)
       setCameraView('chase')
+      setTutorialStep(0)
+      const onboarding = readOnboardingStatus()
+      setTutorialOpen(!onboarding.seen)
+      setSaveError(onboarding.error)
       setRegistering(false)
       setStarted(true)
-      setSaveError(null)
     } catch (error) {
       console.error('Failed to restore saved game', error)
       setSaveError(error instanceof Error ? error.message : 'Failed to restore saved game')
@@ -210,8 +228,12 @@ export default function App() {
     setInterior(false)
     setCameraView('chase')
     setSelectedType('hull')
+    setTutorialStep(0)
+    const onboarding = readOnboardingStatus()
+    setTutorialOpen(!onboarding.seen)
     setRegistering(false)
     setStarted(true)
+    if (onboarding.error) setSaveError(onboarding.error)
   }
 
   useEffect(() => {
@@ -245,13 +267,20 @@ export default function App() {
   }, [victory])
 
   // Mouse steering grabs the pointer in pilot mode; orbit view needs the cursor for drag-to-look
-  const mouseLocked = usePointerLock(started && mode === 'pilot' && cameraView === 'chase' && !interior && !victory && !paused)
+  const mouseLocked = usePointerLock(started && mode === 'pilot' && cameraView === 'chase' && !interior && !victory && !paused && !tutorialOpen)
 
   const toggleCameraView = () => setCameraView((v) => (v === 'chase' ? 'orbit' : 'chase'))
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (!started) return
+      if (tutorialOpen) {
+        if (event.code === 'Escape' && !event.repeat) {
+          event.preventDefault()
+          finishTutorial()
+        }
+        return
+      }
       if (event.code === 'Escape' && !event.repeat && !victory) {
         event.preventDefault()
         closeContextMenu()
@@ -263,7 +292,7 @@ export default function App() {
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
-  }, [mode, paused, victory, started])
+  }, [mode, paused, victory, started, tutorialOpen])
 
   if (!started && !registering) {
     return <StartMenu save={saveSlot.save} error={saveError} onContinue={continueGame} onNewGame={() => setRegistering(true)} />
@@ -281,7 +310,7 @@ export default function App() {
   return (
     <>
       {/* flat: no built-in tone mapping, the post-processing stack does it after the bloom */}
-      <Canvas frameloop={paused ? 'never' : 'always'} shadows="percentage" flat gl={{ antialias: false }} onPointerMissed={() => closeContextMenu()} camera={{ position: [6, 5, 9], fov: 60, far: 10000 }} dpr={[1, 1.5]}>
+      <Canvas frameloop={paused || tutorialOpen ? 'never' : 'always'} shadows="percentage" flat gl={{ antialias: false }} onPointerMissed={() => closeContextMenu()} camera={{ position: [6, 5, 9], fov: 60, far: 10000 }} dpr={[1, 1.5]}>
         <Suspense fallback={null}>
           <Scene
             onBlockCountChange={setBlockCount}
@@ -290,7 +319,7 @@ export default function App() {
             cameraView={cameraView}
             interior={interior}
             docked={mode === 'build'}
-            paused={paused || frozen}
+            paused={paused || frozen || tutorialOpen}
             onVictory={() => setVictory(true)}
           />
         </Suspense>
@@ -343,6 +372,7 @@ export default function App() {
       <FoldOverlay />
 
       {tradeOpen && <TradePanel onClose={() => setTradeOpen(false)} />}
+      {tutorialOpen && <TutorialOverlay step={tutorialStep} onNext={advanceTutorial} onSkip={finishTutorial} />}
       {paused && (
         <PauseMenu
           preferences={inputPreferences}

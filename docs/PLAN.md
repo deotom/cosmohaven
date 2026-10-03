@@ -40,7 +40,7 @@
 ## Phase 3 — Gameplay เพิ่มเติม (ขอบเขตที่อนุมัติแล้ว)
 
 - [x] Autosave ช่องเดียว + Continue/New Game (localStorage): HC, cargo, storage tech, บล็อก/คิวสร้าง/ตำแหน่งยาน, tier, relic, ลูกเรือ, difficulty และ sector ปัจจุบัน; ตรวจ schema ก่อนโหลด
-- [ ] Tutorial / onboarding สั้น ๆ ตอนเริ่มเกม (ปุ่มเยอะมาก)
+- [x] Tutorial / onboarding แบบ skippable 4 ขั้น: สร้างยาน, บิน/เก็บ cargo, Trade Relay, Space-Fold/เป้าหมาย; แสดงครั้งแรกและบันทึกสถานะที่ข้าม/จบแล้ว
 - [x] เมนู pause + ตั้งค่า — ปุ่ม Pause/`Esc`, pause simulation, ปรับ mouse sensitivity และ remap keys พร้อมตรวจ collision
 - [x] ตรวจระบบเสียง — ยังไม่พบ audio/sound playback ใน `src/`
 - [x] Difficulty presets: Relaxed (30–40s, 0.8×), Standard (15–20s, 1×), Challenging (8–12s, 1.25×); ปรับช่วง meteor และราคาบล็อก/อัปเกรด/fold/ซ่อม
