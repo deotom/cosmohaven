@@ -16,7 +16,7 @@ import { crewStats } from './types'
 export type CharacterPose = {
   /** 0 standing still, 1 walking; eased by the AI */
   walk: number
-  activity: 'none' | 'eat' | 'play'
+  activity: 'none' | 'eat' | 'play' | 'repair'
 }
 
 // ---------- Shared geometry ----------
@@ -264,6 +264,9 @@ function animateHumanoid(t: number, pose: CharacterPose, parts: Record<string, T
   } else if (activity === 'play') {
     left = -1.2 + Math.sin(t * 19) * 0.14
     right = -1.2 + Math.sin(t * 17 + 1) * 0.14
+  } else if (activity === 'repair') {
+    left = -0.7 + Math.sin(t * 9) * 0.18
+    right = -0.7 + Math.sin(t * 9 + Math.PI) * 0.18
   }
   if (parts.armL) parts.armL.rotation.x = left
   if (parts.armR) parts.armR.rotation.x = right
@@ -588,6 +591,7 @@ function animateJelly(t: number, pose: CharacterPose, body: THREE.Group | null, 
   let right = -left
   if (activity === 'eat') right = -2.0 + Math.sin(t * 6) * 0.2
   else if (activity === 'play') left = right = -1.1 + Math.sin(t * 18) * 0.15
+  else if (activity === 'repair') left = right = -0.8 + Math.sin(t * 9) * 0.15
   if (armL) armL.rotation.x = left
   if (armR) armR.rotation.x = right
 }

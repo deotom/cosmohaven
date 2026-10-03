@@ -47,7 +47,7 @@ Start by creating a crew member, then build and launch from the home drydock. Co
 
 ### Shipyard controls
 
-Click a block face to queue construction; Shift-click a block to dismantle it. Use 1 / 2 / 3 to select Hull / Food Dispenser / Arcade, or Q to cycle the selection. Drag to orbit the camera and scroll to zoom.
+Click a block face to queue construction; Shift-click a block to dismantle it. Use 1–6 to select Hull, Food Dispenser, Arcade, Engine, Shield, or Repair Bay, or Q to cycle the selection. Engines increase thrust, shields reduce impact damage, and crew use Repair Bays to restore hull below 75%. Drag to orbit the camera and scroll to zoom.
 
 ## Technology
 

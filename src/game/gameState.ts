@@ -1,7 +1,14 @@
 import type { PlaceableBlockType } from './types'
 import { adjustedCost, type Difficulty } from './difficulty'
 
-export const BLOCK_COSTS: Record<PlaceableBlockType, number> = { hull: 10, food: 30, arcade: 30 }
+export const BLOCK_COSTS: Record<PlaceableBlockType, number> = {
+  hull: 10,
+  food: 30,
+  arcade: 30,
+  engine: 60,
+  shield: 80,
+  repair: 70,
+}
 export const STARTING_SCRAP = 100
 export const SCRAP_PICKUP_VALUE = 20
 
@@ -92,6 +99,7 @@ export const gameStats = {
   hull: 100,
   /** Blocks queued at the shipyard; the first is being assembled, with its progress */
   construction: [] as { type: PlaceableBlockType; progress: number }[],
+  modules: { engines: 0, shields: 0, repairBays: 0 },
   /** Main-engine throttle this frame (0-1), for the exhaust plumes */
   thrustLevel: 0,
   /** Signal Relics recovered so far, and the distance to the one in this sector, if any */
@@ -190,6 +198,10 @@ export function setConstruction(queue: typeof gameStats.construction) {
   gameStats.construction = queue
 }
 
+export function setShipModules(modules: typeof gameStats.modules) {
+  gameStats.modules = modules
+}
+
 export function setThrustLevel(level: number) {
   gameStats.thrustLevel = level
 }
@@ -250,6 +262,7 @@ export function readGameStats() {
     notice,
     harvest: { ...gameStats.harvest },
     construction: gameStats.construction.map((c) => ({ ...c })),
+    modules: { ...gameStats.modules },
     fold: { ...gameStats.fold },
     autopilot: { ...gameStats.autopilot },
     arrival: { ...gameStats.arrival },

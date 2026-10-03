@@ -37,15 +37,15 @@
 - [x] เปิด type-aware lint ด้วย `oxlint-tsgolint` (ติดตั้งแล้วและ `npm run lint` ผ่าน)
 - [~] ตรวจ performance: code splitting ลด entry chunk จาก ~2,044 kB เหลือ ~80 kB; `cannon` ยัง 585.78 kB (148.94 kB gzip) และ build เตือน chunk >500 kB; วัดได้ 96 FPS ใน browser sample 2 วินาทีขณะมี meteor 1 ลูก (หลัง fold 2 ครั้ง) แต่ยังไม่ใช่ hardware/device benchmark
 
-## Phase 3 — Gameplay เพิ่มเติม (ข้อเสนอ ยังไม่ได้ตัดสินใจ)
+## Phase 3 — Gameplay เพิ่มเติม (ขอบเขตที่อนุมัติแล้ว)
 
-- [ ] Save/Load (localStorage): scrap, บล็อกของยาน, tier, relic, เผ่า/รูปลักษณ์
+- [ ] Autosave ช่องเดียว + Continue/New Game (localStorage): scrap, บล็อกของยาน, tier, relic, เผ่า/รูปลักษณ์, difficulty และ progression; ตรวจ schema ก่อนโหลด
 - [ ] Tutorial / onboarding สั้น ๆ ตอนเริ่มเกม (ปุ่มเยอะมาก)
 - [x] เมนู pause + ตั้งค่า — ปุ่ม Pause/`Esc`, pause simulation, ปรับ mouse sensitivity และ remap keys พร้อมตรวจ collision
 - [x] ตรวจระบบเสียง — ยังไม่พบ audio/sound playback ใน `src/`
 - [x] Difficulty presets: Relaxed (30–40s, 0.8×), Standard (15–20s, 1×), Challenging (8–12s, 1.25×); ปรับช่วง meteor และราคาบล็อก/อัปเกรด/fold/ซ่อม
 - [x] ตรวจ Hunger/Sanity: ต่ำกว่า 40 ลูกเรือจะหา Food Dispenser/Arcade และฟื้นค่าที่บล็อก; ถ้าไม่มีบล็อกจะแจ้งใน HUD แต่ค่า 0 ยังไม่มี penalty/game-over โดยตรง
-- [ ] บล็อกชนิดใหม่ (เช่น เครื่องยนต์เสริม, โล่, ห้องซ่อม) และอัปเกรดอื่น
+- [x] Ship Modules: Engine (+25% thrust ต่อบล็อก สูงสุด 4), Shield (ลด impact damage 20% ต่อบล็อก สูงสุด 3), Repair Bay (ลูกเรือซ่อม 5 hull/s เมื่อ hull <75%); แสดงผลใน Shipyard/Systems และ remap ปุ่มเลือก 1–6 ได้
 - [ ] เป้าหมายรอง / เหตุการณ์สุ่มอื่นนอกจากอุกกาบาต
 - [x] ตรวจพฤติกรรม hull 0 — hull ถูก clamp ที่ 0, ไม่มี Game Over state; ยานยังบินได้แต่ thrust เหลือ 55%
 

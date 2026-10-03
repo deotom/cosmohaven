@@ -37,6 +37,7 @@ import {
   setArrival,
   setAutopilot,
   setConstruction,
+  setShipModules,
   setThrustLevel,
   trySpendScrap,
 } from './gameState'
@@ -46,6 +47,7 @@ import { useKeyboard } from './useKeyboard'
 import { useMouseLook } from './useMouseLook'
 import { getControlCode, getMouseSensitivity } from '../input/preferences'
 import { currentRole, currentSpecies } from './crewProfile'
+import { engineThrustMultiplier, shieldDamageFactor } from './shipModules'
 import { construction, dockInfo, dockRequests, getDock } from './dock'
 import { useDocking } from './docking'
 import { PendingBlock } from './Holograms'
@@ -58,6 +60,9 @@ const BLOCK_STYLES: Record<BlockType, { color: string; emissive: string; emissiv
   hull: { color: '#8a93a6', emissive: '#000000', emissiveIntensity: 0, edge: '#2b3140' },
   food: { color: '#2ecc71', emissive: '#0f8f43', emissiveIntensity: 0.7, edge: '#c8ffd9' },
   arcade: { color: '#c026d3', emissive: '#a21caf', emissiveIntensity: 0.8, edge: '#ffb3ff' },
+  engine: { color: '#e87a2d', emissive: '#ff6b1a', emissiveIntensity: 1.2, edge: '#ffd0a3' },
+  shield: { color: '#1c86ad', emissive: '#22c7ff', emissiveIntensity: 1, edge: '#a9efff' },
+  repair: { color: '#bd9630', emissive: '#ffdc49', emissiveIntensity: 0.8, edge: '#fff0a6' },
 }
 
 /** Any of these held means the pilot wants the controls back from the auto-pilot. */
@@ -75,7 +80,7 @@ const MANUAL_CONTROLS = [
 ] as const
 
 /** Seconds a shipyard drone needs to assemble each kind of block (before the role's build-speed bonus) */
-const BUILD_TIME: Record<PlaceableBlockType, number> = { hull: 1.6, food: 2.6, arcade: 2.6 }
+const BUILD_TIME: Record<PlaceableBlockType, number> = { hull: 1.6, food: 2.6, arcade: 2.6, engine: 3, shield: 3, repair: 3 }
 
 const BLOCK_SIZE = 1
 const BLOCK_MASS = 1
@@ -205,7 +210,8 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     const now = performance.now()
     if (now - lastHit.current < 500 || impact < SAFE_LANDING_SPEED) return
     lastHit.current = now
-    const damage = Math.min(60, (impact - SAFE_LANDING_SPEED) * 1.6)
+    const rawDamage = Math.min(60, (impact - SAFE_LANDING_SPEED) * 1.6)
+    const damage = rawDamage * shieldDamageFactor(blocks)
     damageHull(damage)
     notify(`Impact! Hull -${Math.round(damage)}%`, 'warning', 1800)
     if (impact > 30) {
@@ -271,7 +277,14 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     return () => unsubscribe.forEach((u) => u())
   }, [api, blocks])
 
-  useEffect(() => onBlockCountChange?.(blocks.length), [blocks.length, onBlockCountChange])
+  useEffect(() => {
+    onBlockCountChange?.(blocks.length)
+    setShipModules({
+      engines: blocks.filter((block) => block.type === 'engine').length,
+      shields: blocks.filter((block) => block.type === 'shield').length,
+      repairBays: blocks.filter((block) => block.type === 'repair').length,
+    })
+  }, [blocks, onBlockCountChange])
 
   const velocityRef = useMemo(() => ({ get current() { return physics.current.velocity } }), [])
   useDocking({ api, positionOut, quaternionOut, velocity: velocityRef, shipMass, busy })
@@ -452,7 +465,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     }
 
     // The pilot's skill and the hull's condition both change how hard the engines push
-    const thrustFactor = currentRole().shipSpeed * hullThrustFactor()
+    const thrustFactor = currentRole().shipSpeed * hullThrustFactor() * engineThrustMultiplier(blocks)
 
     // Automatic flying: the selected auto-pilot task, plus the arrival burns (orbital insertion, de-orbit) the pilot asked for
     const canFly = mode === 'pilot' && !gameStats.victory

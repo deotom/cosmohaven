@@ -9,6 +9,7 @@ import { getDock } from './dock'
 import { sunDirection } from './sunState'
 import { shipPositionRef } from './targetScreen'
 import { buildNavGrid, findNearestPath, findPath, reachableCells } from './Pathfinding'
+import { REPAIR_BAY_RATE, repairBayNeeded } from './shipModules'
 import { crewStats, gridKey, type Block, type BlockType, type GridPos } from './types'
 
 /** Height of the cell floor relative to the cell centre; the astronaut's feet rest here */
@@ -27,25 +28,29 @@ const FULL_AT = 100 // stop restoring at this
 const RESTORE_RATE = 15
 
 /** Each need is a stat that drains over time and is restored by standing on a particular block. */
-type Need = 'food' | 'arcade'
+type Need = 'food' | 'arcade' | 'repair'
 
 const NEEDS: Record<
   Need,
-  { stat: 'hunger' | 'sanity'; block: BlockType; using: string; seeking: string; missing: string }
+  { block: BlockType; using: string; seeking: string; missing: string }
 > = {
   food: {
-    stat: 'hunger',
     block: 'food',
     using: 'Eating',
     seeking: 'Heading to Food Dispenser',
     missing: 'Hungry - no Food Dispenser!',
   },
   arcade: {
-    stat: 'sanity',
     block: 'arcade',
     using: 'Playing Arcade',
     seeking: 'Heading to Arcade',
     missing: 'Sanity low - no Arcade!',
+  },
+  repair: {
+    block: 'repair',
+    using: 'Repairing Hull',
+    seeking: 'Heading to Repair Bay',
+    missing: 'Hull low - no Repair Bay!',
   },
 }
 const NEED_KEYS = Object.keys(NEEDS) as Need[]
@@ -169,8 +174,16 @@ export function Crew({ blocks, worldOut }: CrewProps) {
       b.path = []
     }
 
+    const needValue = (need: Need) => {
+      if (need === 'repair') return gameStats.hull
+      return need === 'food' ? s.hunger : s.sanity
+    }
     const lowNeeds = () =>
-      NEED_KEYS.filter((n) => !(n === 'food' && species.hungerImmune) && s[NEEDS[n].stat] < LOW_BELOW).sort((x, y) => s[NEEDS[x].stat] - s[NEEDS[y].stat])
+      NEED_KEYS.filter(
+        (need) =>
+          !(need === 'food' && species.hungerImmune) &&
+          (need === 'repair' ? repairBayNeeded(gameStats.hull) : needValue(need) < LOW_BELOW),
+      ).sort((x, y) => needValue(x) - needValue(y))
 
     /** Called whenever the crew member is standing on a cell and needs to choose what to do. */
     const decide = () => {
@@ -222,11 +235,19 @@ export function Crew({ blocks, worldOut }: CrewProps) {
 
     if (!b.next) {
       if (b.mode === 'using') {
-        const stat = NEEDS[b.need].stat
-        // A Chef gets more out of every meal
-        const rate = RESTORE_RATE * (b.need === 'food' ? currentRole().foodRestore : 1)
-        s[stat] = Math.min(FULL_AT, s[stat] + rate * dt)
-        if (s[stat] >= FULL_AT) rest(1.5)
+        if (b.need === 'repair') {
+          if (!b.present.has('repair')) rest(0.5)
+          else {
+            repairHull(REPAIR_BAY_RATE * dt)
+            if (gameStats.hull >= 100) rest(1.5)
+          }
+        } else {
+          const stat: 'hunger' | 'sanity' = b.need === 'food' ? 'hunger' : 'sanity'
+          // A Chef gets more out of every meal
+          const rate = RESTORE_RATE * (b.need === 'food' ? currentRole().foodRestore : 1)
+          s[stat] = Math.min(FULL_AT, s[stat] + rate * dt)
+          if (s[stat] >= FULL_AT) rest(1.5)
+        }
       } else if (b.mode === 'resting') {
         b.restTimer -= dt
         if (b.restTimer <= 0) decide()
@@ -267,7 +288,14 @@ export function Crew({ blocks, worldOut }: CrewProps) {
       body.position.set(0, STAND_Y, heading.current.step)
 
       pose.current.walk += ((b.next ? 1 : 0) - pose.current.walk) * Math.min(1, dt * 8)
-      pose.current.activity = b.mode === 'using' && !b.next ? (b.need === 'food' ? 'eat' : 'play') : 'none'
+      pose.current.activity =
+        b.mode === 'using' && !b.next
+          ? b.need === 'food'
+            ? 'eat'
+            : b.need === 'arcade'
+              ? 'play'
+              : 'repair'
+          : 'none'
 
       body.updateWorldMatrix(true, false)
       worldOut.current.copy(body.localToWorld(torso.set(0, 0.4, 0)))

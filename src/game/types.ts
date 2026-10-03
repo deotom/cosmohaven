@@ -4,7 +4,7 @@ import type { Triplet } from '@react-three/cannon'
 export type GridPos = Triplet
 
 /** `core` is the starting block; the rest can be placed by the player. */
-export type BlockType = 'core' | 'hull' | 'food' | 'arcade'
+export type BlockType = 'core' | 'hull' | 'food' | 'arcade' | 'engine' | 'shield' | 'repair'
 export type PlaceableBlockType = Exclude<BlockType, 'core'>
 
 /** Build mode edits the ship and orbits the camera; pilot mode flies it with a chase camera. */

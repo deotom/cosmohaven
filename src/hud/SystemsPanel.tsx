@@ -37,6 +37,10 @@ export function SystemsPanel() {
       <div style={{ marginTop: 6, color: harvester.beamColor, fontWeight: 700 }}>
         Harvester: {harvester.name} (T{game.harvesterTier})
       </div>
+      <div style={{ marginTop: 8, fontWeight: 700, color: '#ffd58a' }}>Ship Modules</div>
+      <div>Engine: {game.modules.engines} · +{Math.min(game.modules.engines, 4) * 25}% thrust</div>
+      <div>Shield: {game.modules.shields} · -{Math.min(game.modules.shields, 3) * 20}% impact damage</div>
+      <div>Repair Bay: {game.modules.repairBays} · repairs below 75% hull</div>
       <div style={{ opacity: 0.8 }}>
         Range {harvester.range} u · {harvester.collectTime}s per scrap{harvester.autoRange > 0 && ` · auto-pull ${harvester.autoRange} u`}
       </div>

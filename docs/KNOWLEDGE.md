@@ -106,13 +106,19 @@ Task: `nav | harvest | hold | evac | orbit | land | dock` — `Shift+P` วน�
 | หัวข้อ | ค่า | ไฟล์ |
 |---|---|---|
 | Scrap เริ่มต้น / ต่อชิ้น | 100 / 20 | `gameState.ts` |
-| ราคาบล็อก | hull 10, food 30, arcade 30 | `gameState.ts` |
+| ราคาบล็อก (ก่อน difficulty multiplier) | hull 10, food 30, arcade 30, engine 60, shield 80, repair 70 | `gameState.ts` |
 | Fold cost / charge / arrive | 40 Scrap / 3s / 1.6s | `gameState.ts`, `fold.ts` |
 | Relic ที่ต้องมี | 5 (หนึ่งชิ้นต่อ sector ที่ fold ไป) | `gameState.ts` |
 | ซ่อมฉุกเฉิน | 15 Scrap → +25 hull, cooldown 4s | `gameState.ts` |
 | Hull → thrust | 100% = 1.0×, 0% = 0.55× | `hullThrustFactor` |
 | Harvester | T-Beam 0 / Magnetic Scoop 80 / Quantum 200 | `upgrades.ts` |
 | Auto-Pilot | Basic 0 / Advanced 120 / Expert 250 | `upgrades.ts` |
+
+### Ship Modules
+- Engine เพิ่มตัวคูณ thrust 25% ต่อบล็อก สูงสุด 4 บล็อก (ตัวคูณสูงสุด 2×); คิดรวมกับโบนัส Pilot และ hull
+- Shield ลดความเสียหายจากการชน 20% ต่อบล็อก สูงสุด 3 บล็อก (ลดได้สูงสุด 60%)
+- Repair Bay ทำให้ลูกเรือเดินไปซ่อมเมื่อ Hull ต่ำกว่า 75% และฟื้น 5 Hull/วินาทีจนเต็ม; ต้องมีลูกเรือและทางเดินถึงห้อง
+- เลือกบล็อกด้วย 1–6 หรือ Q; ปุ่มเลือกแต่ละชนิด remap ได้ใน Settings และ Shipyard แสดง binding ปัจจุบันพร้อมคำอธิบาย
 
 ### เผ่าพันธุ์ (`species.ts`)
 - **Human** — hunger/sanity ลดช้าลง 15%

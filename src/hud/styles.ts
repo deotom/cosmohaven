@@ -35,6 +35,28 @@ export const upgradeButtonStyle: CSSProperties = {
   pointerEvents: 'auto',
 }
 
-export const BLOCK_LABELS: Record<PlaceableBlockType, string> = { hull: 'Hull', food: 'Food Dispenser', arcade: 'Arcade' }
-export const BLOCK_COLORS: Record<PlaceableBlockType, string> = { hull: '#fff', food: '#4dffb8', arcade: '#f08cff' }
-export const BLOCK_ORDER: PlaceableBlockType[] = ['hull', 'food', 'arcade']
+export const BLOCK_LABELS: Record<PlaceableBlockType, string> = {
+  hull: 'Hull',
+  food: 'Food Dispenser',
+  arcade: 'Arcade',
+  engine: 'Engine Module',
+  shield: 'Shield Generator',
+  repair: 'Repair Bay',
+}
+export const BLOCK_DESCRIPTIONS: Record<PlaceableBlockType, string> = {
+  hull: 'Structural room. Protects the ship and keeps it operational.',
+  food: 'Crew use this dispenser to restore Hunger.',
+  arcade: 'Crew use this room to restore Sanity.',
+  engine: 'Each module adds 25% thrust, up to four modules.',
+  shield: 'Each module reduces impact damage by 20%, up to three modules.',
+  repair: 'Crew repair 5 hull per second here when hull is below 75%.',
+}
+export const BLOCK_COLORS: Record<PlaceableBlockType, string> = {
+  hull: '#fff',
+  food: '#4dffb8',
+  arcade: '#f08cff',
+  engine: '#ff9e48',
+  shield: '#65d9ff',
+  repair: '#ffe26b',
+}
+export const BLOCK_ORDER: PlaceableBlockType[] = ['hull', 'food', 'arcade', 'engine', 'shield', 'repair']

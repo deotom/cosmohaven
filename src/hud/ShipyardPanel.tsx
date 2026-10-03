@@ -2,9 +2,19 @@ import { useDock } from '../game/dock'
 import { getBlockCost, readGameStats } from '../game/gameState'
 import { getSector } from '../game/sector'
 import type { PlaceableBlockType } from '../game/types'
+import { controlLabel, getControlCode, type ControlId } from '../input/preferences'
 import { Bar } from './Bar'
-import { BLOCK_COLORS, BLOCK_LABELS, BLOCK_ORDER, hudStyle } from './styles'
+import { BLOCK_COLORS, BLOCK_DESCRIPTIONS, BLOCK_LABELS, BLOCK_ORDER, hudStyle } from './styles'
 import { useSampled } from './useSampled'
+
+const BLOCK_CONTROLS: Record<PlaceableBlockType, ControlId> = {
+  hull: 'selectHull',
+  food: 'selectFood',
+  arcade: 'selectArcade',
+  engine: 'selectEngine',
+  shield: 'selectShield',
+  repair: 'selectRepair',
+}
 
 export function ShipyardPanel({ selectedType, onSelect }: { selectedType: PlaceableBlockType; onSelect: (type: PlaceableBlockType) => void }) {
   const game = useSampled(readGameStats)
@@ -17,10 +27,12 @@ export function ShipyardPanel({ selectedType, onSelect }: { selectedType: Placea
       <div style={{ opacity: 0.75, fontSize: 12 }}>{station?.name ?? 'Drydock'} · bay 1</div>
 
       <div style={{ marginTop: 8, display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {BLOCK_ORDER.map((type, i) => (
+        {BLOCK_ORDER.map((type) => (
           <div
             key={type}
             role="button"
+            aria-label={`${BLOCK_LABELS[type]}: ${BLOCK_DESCRIPTIONS[type]}`}
+            title={BLOCK_DESCRIPTIONS[type]}
             onClick={() => onSelect(type)}
             style={{
               pointerEvents: 'auto',
@@ -35,7 +47,7 @@ export function ShipyardPanel({ selectedType, onSelect }: { selectedType: Placea
             }}
           >
             <span>
-              [{i + 1}] {BLOCK_LABELS[type]}
+              [{controlLabel(getControlCode(BLOCK_CONTROLS[type]))}] {BLOCK_LABELS[type]}
             </span>
             <span style={{ color: game.scrap < getBlockCost(type) ? '#ff5d5d' : '#ffd633' }}>{getBlockCost(type)}</span>
           </div>

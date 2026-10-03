@@ -231,15 +231,60 @@ function HullProps() {
   )
 }
 
+function EngineModuleProps() {
+  return (
+    <group position={[0, 0, -0.2]}>
+      <Cylinder size={[0.22, 0.12, 0.22]} position={[0, -0.3, 0]} material={DARK_METAL} />
+      <Cylinder size={[0.12, 0.55, 0.12]} position={[0, 0.02, 0]} material={glow('#ff8a35', 1.8)} shadow={false} />
+      <Ball position={[0, 0.36, 0]} radius={0.18} material={glow('#ffc46b', 2.5)} />
+    </group>
+  )
+}
+
+function ShieldProps() {
+  return (
+    <group>
+      <Box size={[0.44, 0.55, 0.08]} position={[0, 0, -0.37]} material={DARK_METAL} />
+      <mesh position={[0, 0.02, -0.12]}>
+        <torusGeometry args={[0.31, 0.025, 8, 36]} />
+        <meshBasicMaterial color="#68dfff" transparent opacity={0.82} />
+      </mesh>
+    </group>
+  )
+}
+
+function RepairProps() {
+  return (
+    <group position={[0, 0, -0.25]}>
+      <Box size={[0.56, 0.68, 0.18]} position={[0, -0.06, 0]} material={DARK_METAL} />
+      <Box size={[0.36, 0.22, 0.025]} position={[0, 0.12, 0.102]} material={glow('#ffe26b', 1.6)} shadow={false} />
+      <Cylinder size={[0.05, 0.52, 0.05]} rotation={[0, 0, Math.PI / 3]} position={[-0.21, 0.34, 0]} material={METAL} />
+      <Cylinder size={[0.05, 0.52, 0.05]} rotation={[0, 0, -Math.PI / 3]} position={[0.21, 0.34, 0]} material={METAL} />
+      <Ball position={[0, 0.02, 0.13]} radius={0.07} material={glow('#4dffb8', 2.3)} />
+    </group>
+  )
+}
+
 const PROPS: Record<BlockType, () => ReactElement> = {
   core: CoreProps,
   hull: HullProps,
   food: FoodProps,
   arcade: ArcadeProps,
+  engine: EngineModuleProps,
+  shield: ShieldProps,
+  repair: RepairProps,
 }
 
 /** Light colour of the ceiling strip, tinted per room type. */
-const STRIP: Record<BlockType, string> = { core: '#bff6ff', hull: '#e9f4ff', food: '#d6ffdf', arcade: '#ffd0f4' }
+const STRIP: Record<BlockType, string> = {
+  core: '#bff6ff',
+  hull: '#e9f4ff',
+  food: '#d6ffdf',
+  arcade: '#ffd0f4',
+  engine: '#ffd0a3',
+  shield: '#a9efff',
+  repair: '#fff0a6',
+}
 
 type BlockModelProps = { type: BlockType; exposed: Exposure }
 

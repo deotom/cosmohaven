@@ -25,6 +25,9 @@ export const CONTROL_DEFINITIONS = [
   { id: 'selectHull', label: 'Select Hull', code: 'Digit1', mode: 'build' },
   { id: 'selectFood', label: 'Select Food Dispenser', code: 'Digit2', mode: 'build' },
   { id: 'selectArcade', label: 'Select Arcade', code: 'Digit3', mode: 'build' },
+  { id: 'selectEngine', label: 'Select Engine Module', code: 'Digit4', mode: 'build' },
+  { id: 'selectShield', label: 'Select Shield Generator', code: 'Digit5', mode: 'build' },
+  { id: 'selectRepair', label: 'Select Repair Bay', code: 'Digit6', mode: 'build' },
   { id: 'cycleBlock', label: 'Cycle ship block', code: 'KeyQ', mode: 'build' },
 ] as const
 

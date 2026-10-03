@@ -31,6 +31,9 @@ type KeyAction =
   | 'selectHull'
   | 'selectFood'
   | 'selectArcade'
+  | 'selectEngine'
+  | 'selectShield'
+  | 'selectRepair'
   | 'cycleBlock'
   | 'flight'
 
@@ -67,6 +70,9 @@ export const KEY_BINDINGS: readonly Binding[] = [
   { code: 'Digit1', key: '1', mode: 'build', action: 'selectHull', hint: 'Select Hull', control: 'selectHull' },
   { code: 'Digit2', key: '2', mode: 'build', action: 'selectFood', hint: 'Select Food Dispenser', control: 'selectFood' },
   { code: 'Digit3', key: '3', mode: 'build', action: 'selectArcade', hint: 'Select Arcade', control: 'selectArcade' },
+  { code: 'Digit4', key: '4', mode: 'build', action: 'selectEngine', hint: 'Select Engine Module', control: 'selectEngine' },
+  { code: 'Digit5', key: '5', mode: 'build', action: 'selectShield', hint: 'Select Shield Generator', control: 'selectShield' },
+  { code: 'Digit6', key: '6', mode: 'build', action: 'selectRepair', hint: 'Select Repair Bay', control: 'selectRepair' },
   { code: 'KeyQ', key: 'Q', mode: 'build', action: 'cycleBlock', hint: 'Cycle block selection', control: 'cycleBlock' },
   { code: 'KeyW', key: 'W', mode: 'pilot', action: 'flight', hint: 'Thrust forward', flight: true, control: 'thrustForward' },
   { code: 'KeyS', key: 'S', mode: 'pilot', action: 'flight', hint: 'Thrust backward', flight: true, control: 'thrustBackward' },
@@ -182,6 +188,15 @@ export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
       break
     case 'selectArcade':
       context.setSelectedType('arcade')
+      break
+    case 'selectEngine':
+      context.setSelectedType('engine')
+      break
+    case 'selectShield':
+      context.setSelectedType('shield')
+      break
+    case 'selectRepair':
+      context.setSelectedType('repair')
       break
     case 'cycleBlock':
       context.setSelectedType((selected) => BLOCK_ORDER[(BLOCK_ORDER.indexOf(selected) + 1) % BLOCK_ORDER.length])
