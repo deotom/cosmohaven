@@ -1,14 +1,15 @@
 # Cosmohaven — Plan & Checklist
 
 ความรู้พื้นฐานดูที่ [KNOWLEDGE.md](KNOWLEDGE.md)
-สัญลักษณ์: `[x]` = เสร็จและตรวจแล้ว · `[~]` = กำลังทำ · `[ ]` = ยังไม่ทำ / ยังไม่ยืนยัน
+สัญลักษณ์: `[x]` = เสร็จและตรวจแล้ว · `[~]` = ยังต้องยืนยัน/มี blocker · `[ ]` = ยังไม่เริ่ม
+อัปเดตสถานะล่าสุด: **2026-10-04**
 
 ## Phase 0 — เตรียมการทำงานต่อ (ทำก่อน)
 
 - [x] `git init` + commit สถานะเริ่มต้น (`a0e8a1f`)
-- [~] ตรวจ dependencies/เปิดเกม/เล่นให้จบหนึ่งรอบ — dependencies พร้อม, เข้า Shipyard, undock และ fold สำเร็จ 2 ครั้ง; ยังไม่ได้เล่น campaign จนชนะ
-- [x] `npm run build` ผ่าน (ตรวจเมื่อ 2026-10-03)
-- [x] `npm run lint` ผ่าน (ตรวจเมื่อ 2026-10-03)
+- [~] ตรวจ dependencies/เปิดเกม/เล่นให้จบหนึ่งรอบ — dependencies พร้อม; smoke test ผ่านหน้าเริ่มเกม → Crew Registration → Shipyard → ข้าม tutorial → autosave/reload/Continue; **ยังไม่ได้ยืนยัน campaign เต็มจนชนะบน gameplay จริง**
+- [x] `npm run build` ผ่าน (ตรวจเมื่อ 2026-10-04; มีคำเตือน chunk `cannon` ด้านล่าง)
+- [x] `npm run lint` ผ่าน (ตรวจเมื่อ 2026-10-04)
 - [x] แก้ README.md ให้เป็นคำอธิบายเกมจริง
 - [x] ลบ comment ลอย `1-based tiers` ใน `gameState.ts` และ asset ที่ไม่ได้ import (`react.svg`, `vite.svg`, `hero.png`)
 
@@ -35,7 +36,7 @@
 - [x] เพิ่ม unit test (Vitest) สำหรับ logic ที่ pure: `rng`, `sector` (seed เดิม → ผลเดิม), `gravity`, docking geometry, `Pathfinding`, `upgrades`, `gameState` (trySpendCredits, requestArrival) — tests ผ่าน
 - [x] เพิ่ม test สำหรับ `runAutopilot` (input → output): หลบอุกกาบาตและสั่งเบรกขณะลงจอดเร็วเกิน safe speed
 - [x] เปิด type-aware lint ด้วย `oxlint-tsgolint` (ติดตั้งแล้วและ `npm run lint` ผ่าน)
-- [~] ตรวจ performance: code splitting ลด entry chunk จาก ~2,044 kB เหลือ ~80 kB; `cannon` ยัง 585.78 kB (148.94 kB gzip) และ build เตือน chunk >500 kB; วัดได้ 96 FPS ใน browser sample 2 วินาทีขณะมี meteor 1 ลูก (หลัง fold 2 ครั้ง) แต่ยังไม่ใช่ hardware/device benchmark
+- [~] ตรวจ performance: `npm run build` (2026-10-04) ให้ entry chunk 115.68 kB (37.40 kB gzip); `cannon` 585.78 kB (148.94 kB gzip) ยังเกิน 500 kB. **ยังไม่มีการ profile FPS/heap/GPU แบบต่อเนื่องหลังเล่น/fold ซ้ำบน hardware เป้าหมาย**; ค่า FPS sample เดิม 96 FPS/2 วินาทีไม่ถือเป็น benchmark หรือ memory-plateau verification
 
 ## Phase 3 — Gameplay เพิ่มเติม (ขอบเขตที่อนุมัติแล้ว)
 
@@ -53,19 +54,29 @@
 ## Phase 4 — Polish & Release
 
 - [x] รองรับขนาดจอ/ความละเอียดต่าง ๆ, ตรวจ HUD บนจอเล็กที่ viewport 390×844
-- [~] Code-splitting / ลดขนาด bundle — แยก Scene แบบ lazy และแบ่ง vendor chunks แล้ว; `cannon` ยังเกิน 500 kB (ยังไม่เปลี่ยน physics engine)
+- [~] Code-splitting / ลดขนาด bundle — แยก Scene แบบ lazy และแบ่ง vendor chunks แล้ว; ณ 2026-10-04 `cannon` ยัง 585.78 kB หลัง minify (148.94 kB gzip) และยังเตือน >500 kB. `@react-three/cannon` ส่ง dist เป็น bundled entry; ต้องประเมินการแยก physics package/engine ก่อนเปลี่ยน dependency (ยังไม่แก้ด้วยการเพิ่ม warning limit)
 - [x] ตั้ง GitHub Actions CI สำหรับ `npm ci`, lint, test และ build
-- [~] ตั้งค่า GitHub Pages — เพิ่ม deploy job ต่อจาก CI และตั้ง Vite base ตามชื่อ repository แล้ว; ต้องเปิด Pages source เป็น GitHub Actions และยังไม่ได้ทดสอบ deploy จริง (ไม่มี remote ใน workspace)
+- [~] ตั้งค่า GitHub Pages — workflow มี upload/deploy job และ Vite base รองรับชื่อ repository แล้ว แต่ workspace **ไม่มี git remote**; ยัง push/ดู repository settings หรือทดสอบ URL deployment จริงไม่ได้. ต้องกำหนด remote และเปิด Pages source เป็น GitHub Actions ก่อน
 - [x] ตั้งชื่อ title และ meta ให้ตรงเกม (favicon เดิม `/favicon.svg` ยังใช้งานอยู่)
+
+## สิ่งที่ยังต้องปิดก่อนถือว่า PLAN.md เสร็จ
+
+รายการ feature ใน Phase 1–3 และ CI ที่ทำได้จาก workspace เสร็จแล้ว; สถานะ `[~]` ที่เหลือเป็น verification/deployment gates ไม่ใช่งานที่ติ๊กผ่านได้จากการอ่านโค้ด:
+
+1. **Campaign win:** เล่นจาก New Game จนเก็บ 5 Signal Relics, fold ไป Earth 2.0 และลงจอดปลอดภัย; บันทึกผลและข้อผิดพลาดที่พบ (full-playthrough ยังไม่ยืนยัน)
+2. **Performance:** profile session ที่เล่น/fold หลายรอบบน browser/device เป้าหมาย พร้อม FPS และ heap/GPU memory ก่อน-หลัง เพื่อยืนยัน plateau; benchmark 2 วินาทีเดิมไม่เพียงพอ
+3. **Bundle:** ตรวจทางลด `cannon` chunk โดยไม่เปลี่ยน physics behavior; ถ้าต้องเปลี่ยน physics engine ให้แยกเป็นงาน migration พร้อม regression tests
+4. **GitHub Pages:** ต้องมี remote/repository และเปิด Pages source เป็น GitHub Actions; หลัง push default branch จึงตรวจ workflow run และ URL จริงได้
 
 ## วิธีกลับมาทำงานต่อ (quick start)
 
 1. อ่าน [KNOWLEDGE.md](KNOWLEDGE.md) หัวข้อ 4 (สถาปัตยกรรม) และ 7 (ข้อควรระวัง)
-2. ทำ Phase 0 ให้ครบ
-3. เลือกหัวข้อจาก Phase 2 หรือ 3 ติ๊ก `[x]` เมื่อเสร็จ และจดการตัดสินใจสำคัญลงใน Decision Log ด้านล่าง
+2. ปิด verification gates ที่ระบุข้างบน; อย่าทำเครื่องหมาย `[x]` หากยังไม่มีผลทดสอบ/หลักฐาน
+3. งาน feature ใหม่สำหรับตัวละครและยานสำรวจอยู่ใน [PLAN_CREW_AND_SHIPS.md](PLAN_CREW_AND_SHIPS.md) และเป็น roadmap แยกจาก checklist นี้
 
 ## Decision Log
 
 | วันที่ | การตัดสินใจ | เหตุผล |
 |---|---|---|
 | 2026-10-03 | สร้างเอกสารเริ่มต้นจากการอ่านโค้ด | เพื่อกลับมาทำต่อได้ |
+| 2026-10-04 | แยกสถานะ feature completion ออกจาก campaign/performance/deployment verification | ไม่รายงานการชนะ, memory plateau หรือ GitHub Pages deployment ว่าผ่านโดยไม่มีการทดสอบจริง |
