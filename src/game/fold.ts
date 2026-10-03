@@ -1,5 +1,5 @@
 import { getDock } from './dock'
-import { RELICS_NEEDED, gameStats, getFoldCost, notify, setFold, trySpendScrap } from './gameState'
+import { RELICS_NEEDED, gameStats, getFoldCost, notify, setFold, trySpendCredits } from './gameState'
 import { earthSector, enterSector, generateSector } from './sector'
 
 /** Seconds the drive spends spinning up before the ship leaves, and the seconds the arrival flash lasts. */
@@ -8,14 +8,14 @@ export const FOLD_ARRIVAL_TIME = 1.6
 
 let nextSectorId = 1
 
-/** Starts a Space-Fold: spends the Scrap and spins up the drive. Does nothing if already folding. */
+/** Starts a Space-Fold: spends HC and spins up the drive. Does nothing if already folding. */
 export function requestFold() {
   if (gameStats.victory || gameStats.fold.phase !== 'idle') return
   if (getDock().phase !== 'free') {
     notify('Undock before folding', 'warning')
     return
   }
-  if (!trySpendScrap(getFoldCost())) return
+  if (!trySpendCredits(getFoldCost())) return
   setFold({ phase: 'charging', charge: 0 })
   notify('Space-Fold drive charging: hold on!', 'gain', FOLD_CHARGE_TIME * 1000)
 }

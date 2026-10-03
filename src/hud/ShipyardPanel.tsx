@@ -49,7 +49,7 @@ export function ShipyardPanel({ selectedType, onSelect }: { selectedType: Placea
             <span>
               [{controlLabel(getControlCode(BLOCK_CONTROLS[type]))}] {BLOCK_LABELS[type]}
             </span>
-            <span style={{ color: game.scrap < getBlockCost(type) ? '#ff5d5d' : '#ffd633' }}>{getBlockCost(type)}</span>
+            <span style={{ color: game.credits < getBlockCost(type) ? '#ff5d5d' : '#ffd633' }}>{getBlockCost(type)} HC</span>
           </div>
         ))}
       </div>

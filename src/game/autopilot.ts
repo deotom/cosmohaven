@@ -1,8 +1,11 @@
 import * as THREE from 'three'
 import { dockInfo } from './dock'
 import {
+  canAddCargo,
   CELESTIAL_BODIES,
   gameStats,
+  getCargoCapacity,
+  getCargoVolume,
   meteorTracks,
   notify,
   setArrival,
@@ -416,6 +419,7 @@ function nearestScrap(from: THREE.Vector3, includeRelics: boolean, range: number
   let bestDistance = range
   for (const [id, pickup] of scrapRegistry) {
     if (pickup.relic && !includeRelics) continue
+    if (!canAddCargo(pickup.relic ? 'relics' : 'scrap')) continue
     const distance = pickup.position.distanceTo(from)
     if (distance < bestDistance) {
       best = id
@@ -431,7 +435,8 @@ function harvestTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutp
 
   // Keep the current piece until it is collected; then take the nearest, or stop if this was a single pick
   let id = ap.harvestId
-  if (id !== null && !scrapRegistry.has(id)) {
+  const currentPickup = id === null ? undefined : scrapRegistry.get(id)
+  if (id !== null && (!currentPickup || !canAddCargo(currentPickup.relic ? 'relics' : 'scrap'))) {
     id = null
     if (!ap.sweep) {
       setAutopilot({ engaged: false, status: 'Off', harvestId: null })
@@ -450,7 +455,10 @@ function harvestTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutp
     stopRotation(input, out)
     out.maneuverAccel.copy(input.gravity).multiplyScalar(-1).addScaledVector(input.velocity, -HOLD_KD)
     clampLength(out.maneuverAccel, AP_THRUST_ACCEL)
-    out.status = `Sweeping: no scrap within ${Math.round(input.scanRange)} u`
+    out.status =
+      getCargoVolume() >= getCargoCapacity()
+        ? 'Cargo hold full · sell at Trade Relay'
+        : `Sweeping: no scrap within ${Math.round(input.scanRange)} u`
     return out
   }
 

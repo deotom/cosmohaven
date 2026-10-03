@@ -22,7 +22,7 @@ import { createTargetState, resolveTarget, stationEntrance } from './targets'
 import { shipState } from './shipState'
 import { advanceFold, requestFold } from './fold'
 import {
-  addScrap,
+  addCredits,
   addThrustUsed,
   CELESTIAL_BODIES,
   EARTH_2,
@@ -39,7 +39,7 @@ import {
   setConstruction,
   setShipModules,
   setThrustLevel,
-  trySpendScrap,
+  trySpendCredits,
 } from './gameState'
 import { createGravitySample, sampleGravity } from './gravity'
 import { gridKey, type Block, type BlockType, type GameMode, type GridPos, type PlaceableBlockType } from './types'
@@ -625,14 +625,14 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     // Ignore clicks that were really camera drags
     if (e.delta > 4) return
 
-    // Shift+click takes a block apart (half its Scrap back), unless that would cut the ship in two
+    // Shift+click takes a block apart (half its HC cost back), unless that would cut the ship in two
     if (e.nativeEvent.shiftKey) {
       const block = blocks.find((b) => gridKey(b.pos) === gridKey(p))
       if (!block || !canRemove(blocks, block)) {
         notify(block?.type === 'core' ? 'The core cannot be removed' : 'Removing that would split the ship', 'warning')
         return
       }
-      addScrap(Math.floor(getBlockCost(block.type as PlaceableBlockType) / 2))
+      addCredits(Math.floor(getBlockCost(block.type as PlaceableBlockType) / 2))
       setBlocks((prev) => prev.filter((b) => b !== block))
       setGhost(null)
       return
@@ -640,7 +640,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
 
     const target = neighborCell(p, e)
     if (!target || occupiedAll.has(gridKey(target))) return
-    if (!trySpendScrap(getBlockCost(selectedType))) return
+    if (!trySpendCredits(getBlockCost(selectedType))) return
     // The drones build it over time; an Engineer is quicker
     const total = BUILD_TIME[selectedType] / currentRole().buildSpeed
     setPending((prev) => [...prev, { pos: target, type: selectedType, total }])

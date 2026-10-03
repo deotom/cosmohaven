@@ -100,9 +100,9 @@ export const controlHints = (mode: GameMode) =>
     (binding) => {
       const hint =
         binding.control === 'fold'
-          ? `Space-Fold (${getFoldCost()} Scrap)`
+          ? `Space-Fold (${getFoldCost()} HC)`
           : binding.control === 'repair'
-            ? `Emergency repair (${getRepairCost()} Scrap)`
+            ? `Emergency repair (${getRepairCost()} HC)`
             : binding.hint
       return `${binding.shift ? `Shift+${bindingLabel(binding)}` : bindingLabel(binding)} — ${hint}`
     },

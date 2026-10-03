@@ -70,7 +70,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 ## 4. แกนการเล่น (Core Loop)
 
 ```
-เก็บ Scrap ──► ต่อ/ขยายยานที่ Drydock ──► บินออกไปสำรวจ
+เก็บวัตถุดิบ ──► ขายเป็น Haven Credits (HC) ──► ต่อ/ขยายยานที่ Drydock
      ▲                                          │
      │                                          ▼
   ซ่อมยาน / ดูแลลูกเรือ ◄── เจอ Signal Relic ◄── Space-Fold ไประบบดาวใหม่
@@ -83,7 +83,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 **จังหวะการเล่นระดับสั้น:** บินไปหา Scrap → เปิด tractor beam (`F`) → หลบอุกกาบาต (ทุก 15–20 วินาที) →
 เข้าเขตแรงโน้มถ่วงดาว → เลือก orbit หรือ landing
 
-**ระดับกลาง:** เก็บ Scrap พอ → กลับ drydock → ต่อบล็อกเพิ่ม/ซ่อมยาน → อัปเกรด Harvester/Autopilot → Fold
+**ระดับกลาง:** เก็บวัตถุดิบจนโกดังใกล้เต็ม → ขายที่ Trade Relay/drydock → ต่อบล็อก/อัปเกรด → Fold
 
 **ระดับยาว:** ครบ 5 Relics → Earth 2.0 unlock → ลงจอดสำเร็จ
 
@@ -95,7 +95,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 
 ### 5.1 สร้างยาน (Shipbuilding) ✅
 - ต่อยานจากบล็อก ด้วยการคลิกหน้าบล็อกเพื่อเพิ่ม, Shift+คลิกเพื่อรื้อ
-- บล็อก: **Hull** (10 Scrap), **Food Dispenser** (30), **Arcade** (30), **Engine Module** (60), **Shield Generator** (80), **Repair Bay** (70); ราคาได้รับตัวคูณตาม difficulty
+- บล็อก: **Hull** (10 HC), **Food Dispenser** (30), **Arcade** (30), **Engine Module** (60), **Shield Generator** (80), **Repair Bay** (70); ราคาได้รับตัวคูณตาม difficulty
 - Engine แต่ละบล็อกเพิ่ม thrust 25% (สูงสุด 4 บล็อก); Shield แต่ละบล็อกลดความเสียหายจากการชน 20% (สูงสุด 3 บล็อก)
 - เมื่อ Hull ต่ำกว่า 75% ลูกเรือจะเดินไปใช้ Repair Bay เพื่อซ่อม 5 Hull/วินาที; ต้องมีลูกเรือและห้องที่เข้าถึงได้
 - Shipyard แสดงผลของ module แต่ละชนิด; ใช้ปุ่ม 1–6 เลือกบล็อก (remap ได้ใน Settings) หรือ Q วนชนิดบล็อก
@@ -120,7 +120,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 - กล้อง: chase / orbit (`C`) / interior (`V`) / docked
 - ความเสียหายตัวยาน (Hull 0–100%): ยิ่งเสียหาย thrust ยิ่งลด (เหลือ 55% ที่ 0%)
 - ที่ Hull 0 ยานยังบินได้ด้วย thrust 55%; ปัจจุบันไม่มี Game Over state
-- ซ่อมโดยลูกเรือที่ Repair Bay เมื่อ Hull ต่ำกว่า 75%; ซ่อมฟรีที่ shipyard หรือฉุกเฉินด้วย Scrap (`R`, 15 Scrap, +25%)
+- ซ่อมโดยลูกเรือที่ Repair Bay เมื่อ Hull ต่ำกว่า 75%; ซ่อมฟรีที่ shipyard หรือฉุกเฉินด้วย HC (`R`, 15 HC, +25%)
 
 ### 5.4 แรงโน้มถ่วง บรรยากาศ และการมาถึงดาว (Gravity & Arrival) ⚠️
 - แรงโน้มถ่วงแบบ gm/r² มี fade ที่ขอบ well; วงโคจรเสถียรเฉพาะในรัศมี < 75% ของ well
@@ -132,8 +132,11 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 
 ### 5.5 เก็บทรัพยากร (Harvesting) ✅
 - Tractor beam (`F`) ดึง Scrap ลอยในอวกาศ; 3 tier: T-Beam (ระยะ 10), Magnetic Scoop (22, ดูดอัตโนมัติ, 80 Scrap), Quantum Harvester (55, 200 Scrap)
-- Scrap ที่เก็บ = 20 ต่อชิ้น; เริ่มเกมด้วย 100 Scrap
-- อัปเกรดด้วย `U` (Harvester) และ `I` (Autopilot: Advanced 120, Expert 250 Scrap)
+- วัตถุดิบที่เก็บกินพื้นที่จริงใน cargo hold; ความจุเริ่มต้น 8 units และห้ามเก็บเมื่อเต็ม
+- เปิด Trade Relay ได้ทุก sector (ขาย 18 HC ต่อ Scrap) หรือขายที่ drydock ในราคาเต็ม (20 HC); Scrap ต้องขายก่อนจึงใช้จ่ายได้
+- เริ่มเกมด้วย 100 **Haven Credits (HC)**; Relics ใช้พื้นที่ 1 unit และขายไม่ได้
+- อัปเกรด Harvester (`U`: Magnetic Scoop 80 HC, Quantum Harvester 200 HC) และ Auto-Pilot (`I`: Advanced 120 HC, Expert 250 HC)
+- Cargo technologies ซื้อด้วย HC: Expanded Bay (14 units, 120), Mass Compressor (8 units, cargo ใช้ 55% volume, 240), Quantum Vault (12 units, cargo ใช้ 30% volume, 450); เปลี่ยนระหว่างที่ซื้อไว้แล้วได้ฟรี
 
 ### 5.6 Autopilot และงานอัตโนมัติ ✅
 | Tier | ความสามารถ |
@@ -151,7 +154,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 - ⚠️ ขณะอยู่ pointer lock (chase view) คลิกวัตถุไม่ได้ ใช้ `T`/เลข หรือกด `Esc` ก่อน
 
 ### 5.8 Space-Fold และโลกเปิดแบบ procedural ✅
-- `J` กระโดดไปยัง sector ใหม่ (40 Scrap) ผ่านขั้นชาร์จ → แฟลช → มาถึง
+- `J` กระโดดไปยัง sector ใหม่ (40 HC) ผ่านขั้นชาร์จ → แฟลช → มาถึง
 - Sector สร้างจาก seed (mulberry32): ดาวเคราะห์, ดวงดาว, Scrap, Relic — seed เดิมได้ผลเดิม
 - Sector พิเศษ: **Home** (Kepler-9 + Haven Drydock) และ **Earth** (ปลดล็อกเมื่อมี 5 Relics)
 - Signal Relic: ชิ้นเดียวต่อ sector ที่ fold ไปเจอ มีตัวชี้ระยะ
@@ -210,7 +213,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 | `U` / `I` | อัปเกรด Harvester / Autopilot |
 | `1–4` | action ของเป้าหมายที่ล็อก |
 
-**โหมด Build (ที่ Drydock):** คลิกหน้าบล็อกเพื่อสร้าง, Shift+คลิกเพื่อรื้อ, `1/2/3` เลือก Hull/Food/Arcade, `Q` วนเลือก, ลากเมาส์หมุนกล้อง, scroll ซูม
+**โหมด Build (ที่ Drydock):** คลิกหน้าบล็อกเพื่อสร้าง, Shift+คลิกเพื่อรื้อ, `1–6` เลือกบล็อก, `Q` วนเลือก, ลากเมาส์หมุนกล้อง, scroll ซูม
 
 ---
 
@@ -224,7 +227,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 | FR-3 | ลูกเรือมี Hunger/Sanity และตอบสนองต่อ Food/Arcade | ✅ |
 | FR-4 | บินยาน 6 แกนด้วยคีย์บอร์ด + เมาส์ | ✅ |
 | FR-5 | ดาวมีแรงโน้มถ่วงและบรรยากาศ ลงจอดต้องช้ากว่า 12 u/s | ✅ |
-| FR-6 | เก็บ Scrap และใช้จ่ายกับบล็อก/Fold/ซ่อม/อัปเกรด | ✅ |
+| FR-6 | เก็บ Scrap เข้า cargo, ขายเป็น HC และใช้ HC กับบล็อก/Fold/ซ่อม/อัปเกรด | ✅ |
 | FR-7 | Space-Fold ไป sector ที่สร้างจาก seed และได้ Relic | ✅ |
 | FR-8 | ชนะเมื่อมี 5 Relics และแตะผิว Earth 2.0 อย่างปลอดภัย | ✅ |
 | FR-9 | Autopilot หลาย tier/task และ target lock | ✅ |

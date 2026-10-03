@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { CELESTIAL_BODIES, meteorTracks, type TargetKind, type TargetRef } from './gameState'
+import { canAddCargo, CELESTIAL_BODIES, meteorTracks, type TargetKind, type TargetRef } from './gameState'
 import { getSector } from './sector'
 import { stationPose } from './station'
 
@@ -88,7 +88,10 @@ export function listTargets(from: THREE.Vector3, range = 1500): TargetRef[] {
   }
   for (const body of CELESTIAL_BODIES) add(planetRef(body.name), 1e9)
   for (const station of getSector().stations) add(stationRef(station.name), 1e9)
-  for (const [id, pickup] of scrapRegistry) add(scrapRef(id, pickup.relic), pickup.relic ? 1e9 : SCRAP_LIST_RANGE)
+  for (const [id, pickup] of scrapRegistry) {
+    const cargoKind = pickup.relic ? 'relics' : 'scrap'
+    if (canAddCargo(cargoKind)) add(scrapRef(id, pickup.relic), pickup.relic ? 1e9 : SCRAP_LIST_RANGE)
+  }
   for (const id of meteorTracks.keys()) add(meteorRef(id), range)
   return found.sort((a, b) => a.distance - b.distance).map((f) => f.ref)
 }

@@ -2,6 +2,7 @@ import { useSyncExternalStore } from 'react'
 import { setTask } from './autopilot'
 import { getDock } from './dock'
 import {
+  canAddCargo,
   CELESTIAL_BODIES,
   gameStats,
   notify,
@@ -100,13 +101,24 @@ export function runAction(actionId: string, target: TargetRef) {
   switch (actionId) {
     case 'harvest-single':
     case 'harvest-sweep': {
-      if (!scrapRegistry.has(idOf(target))) {
+      const pickup = scrapRegistry.get(idOf(target))
+      if (!pickup) {
         notify('That is already gone', 'warning')
+        return
+      }
+      if (!canAddCargo(pickup.relic ? 'relics' : 'scrap')) {
+        notify('Cargo hold full · sell cargo at a Trade Relay', 'warning', 2500)
         return
       }
       setTask('harvest', { sweep: actionId === 'harvest-sweep', harvestId: idOf(target) })
       engage()
-      notify(actionId === 'harvest-sweep' ? 'Auto-pilot: sweeping the area for scrap' : 'Auto-pilot: harvesting that target', 'gain', 2500)
+      notify(
+        actionId === 'harvest-sweep'
+          ? 'Auto-pilot: sweeping the area for cargo'
+          : 'Auto-pilot: harvesting that target',
+        'gain',
+        2500,
+      )
       return
     }
     case 'orbit':

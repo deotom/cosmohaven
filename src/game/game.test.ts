@@ -4,7 +4,19 @@ import { createAutopilotOutput, runAutopilot, type AutopilotInput } from './auto
 import { stationPose, type StationSpec } from './station'
 import { buildNavGrid, findNearestPath, findPath, reachableCells } from './Pathfinding'
 import { createGravitySample, sampleGravity } from './gravity'
-import { CELESTIAL_BODIES, gameStats, meteorTracks, requestArrival, trySpendScrap, type CelestialBody } from './gameState'
+import {
+  CELESTIAL_BODIES,
+  gameStats,
+  getCargoCapacity,
+  getCargoVolume,
+  meteorTracks,
+  purchaseStorageTech,
+  requestArrival,
+  sellCargo,
+  tryAddCargo,
+  trySpendCredits,
+  type CelestialBody,
+} from './gameState'
 import { generateSector } from './sector'
 import { mulberry32 } from './rng'
 import { upgrade } from './upgrades'
@@ -23,7 +35,11 @@ const makeBody = (position: [number, number, number] = [0, 0, -1000]): Celestial
 beforeEach(() => {
   CELESTIAL_BODIES.length = 0
   meteorTracks.clear()
-  gameStats.scrap = 100
+  gameStats.credits = 100
+  gameStats.cargo = { scrap: 0, relics: 0 }
+  gameStats.storageTech = null
+  gameStats.ownedStorageTechs = []
+  gameStats.relics = 0
   gameStats.hull = 100
   gameStats.harvesterTier = 1
   gameStats.autopilotTier = 1
@@ -124,12 +140,12 @@ describe('docking geometry', () => {
 })
 
 describe('game state and upgrades', () => {
-  it('spends only available Scrap', () => {
-    gameStats.scrap = 30
-    expect(trySpendScrap(20)).toBe(true)
-    expect(gameStats.scrap).toBe(10)
-    expect(trySpendScrap(20)).toBe(false)
-    expect(gameStats.scrap).toBe(10)
+  it('spends only available HC', () => {
+    gameStats.credits = 30
+    expect(trySpendCredits(20)).toBe(true)
+    expect(gameStats.credits).toBe(10)
+    expect(trySpendCredits(20)).toBe(false)
+    expect(gameStats.credits).toBe(10)
   })
 
   it('moves arrival through valid choices and leaves invalid choices unchanged', () => {
@@ -146,14 +162,51 @@ describe('game state and upgrades', () => {
   })
 
   it('upgrades only when the next tier is affordable', () => {
-    gameStats.scrap = 80
+    gameStats.credits = 80
     upgrade('harvester')
     expect(gameStats.harvesterTier).toBe(2)
-    expect(gameStats.scrap).toBe(0)
+    expect(gameStats.credits).toBe(0)
 
     upgrade('harvester')
     expect(gameStats.harvesterTier).toBe(2)
-    expect(gameStats.scrap).toBe(0)
+    expect(gameStats.credits).toBe(0)
+  })
+
+  it('keeps collected cargo within the active hold capacity', () => {
+    for (let i = 0; i < 8; i++) expect(tryAddCargo('scrap')).toBe(true)
+    expect(tryAddCargo('scrap')).toBe(false)
+    expect(getCargoVolume()).toBe(8)
+    expect(getCargoCapacity()).toBe(8)
+  })
+
+  it('sells cargo for less at a Trade Relay while retaining quest relics', () => {
+    gameStats.cargo = { scrap: 2, relics: 1 }
+    gameStats.relics = 1
+    expect(sellCargo(false)).toBe(36)
+    expect(gameStats.credits).toBe(136)
+    expect(gameStats.cargo).toEqual({ scrap: 0, relics: 1 })
+    expect(getCargoVolume()).toBe(1)
+  })
+
+  it('pays full value at a drydock', () => {
+    gameStats.cargo.scrap = 2
+    expect(sellCargo(true)).toBe(40)
+    expect(gameStats.credits).toBe(140)
+    expect(gameStats.cargo.scrap).toBe(0)
+  })
+
+  it('supports purchasable storage technologies with distinct capacity and compression', () => {
+    gameStats.credits = 500
+    expect(purchaseStorageTech('mass-compressor')).toBe(true)
+    expect(gameStats.credits).toBe(260)
+    expect(gameStats.storageTech).toBe('mass-compressor')
+    for (let i = 0; i < 14; i++) expect(tryAddCargo('scrap')).toBe(true)
+    expect(tryAddCargo('scrap')).toBe(false)
+    expect(getCargoVolume()).toBeCloseTo(7.7)
+
+    expect(purchaseStorageTech('expanded-bay')).toBe(true)
+    expect(getCargoCapacity()).toBe(14)
+    expect(getCargoVolume()).toBe(14)
   })
 })
 

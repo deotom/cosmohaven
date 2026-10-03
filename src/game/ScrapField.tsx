@@ -2,13 +2,14 @@ import { useFrame } from '@react-three/fiber'
 import { useEffect, useMemo, useRef, useState, type RefObject } from 'react'
 import * as THREE from 'three'
 import {
+  canAddCargo,
   RELICS_NEEDED,
-  SCRAP_PICKUP_VALUE,
   collectRelic,
   gameStats,
   notify,
   setHarvest,
   setRelicDistance,
+  tryAddCargo,
 } from './gameState'
 import type { Sector } from './sector'
 import { targetHandlers } from './targetScreen'
@@ -34,6 +35,8 @@ function buildPickups(sector: Sector): Pickup[] {
   return pickups
 }
 
+const cargoKind = (pickup: Pickup) => (pickup.kind === 'relic' ? 'relics' : 'scrap')
+
 type ScrapFieldProps = {
   /** Mount this with `key={sector.id}` so a new sector starts fresh */
   sector: Sector
@@ -43,7 +46,7 @@ type ScrapFieldProps = {
 }
 
 /**
- * The sector's floating scrap and Signal Relic, harvested with the ship's beam: hold F near a piece
+ * The sector's floating scrap and Signal Relic, harvested with the ship's beam: hold F near a pickup
  * (or just get close, with the Magnetic Scoop and better) and it is reeled in over a short beam.
  * Deliberately not physics bodies: a squared-distance check per remaining pickup per frame is all
  * it costs.
@@ -83,15 +86,21 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
 
     // Pick the target: keep the current one while it's still in reach, else the nearest in reach
     let inRange = 0
+    let cargoBlocked = 0
     let nearest: number | null = null
     let nearestDistSq = Infinity
     let keepTarget = false
     for (const child of children) {
       const id = child.userData.id as number
-      const distSq = pickups[id].position.distanceToSquared(ship)
+      const pickup = pickups[id]
+      const distSq = pickup.position.distanceToSquared(ship)
+      const canStore = canAddCargo(cargoKind(pickup))
       const reach = holding ? tier.range : tier.autoRange
-      if (active && distSq < tier.range * tier.range) inRange++
-      if (active && distSq < reach * reach) {
+      if (active && distSq < tier.range * tier.range) {
+        if (canStore) inRange++
+        else cargoBlocked++
+      }
+      if (active && canStore && distSq < reach * reach) {
         if (id === target.current) keepTarget = true
         if (distSq < nearestDistSq) {
           nearestDistSq = distSq
@@ -99,7 +108,13 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
         }
       }
     }
-    if (autoTarget !== null && active && pickups[autoTarget] && pickups[autoTarget].position.distanceToSquared(ship) < tier.range * tier.range) {
+    if (
+      autoTarget !== null &&
+      active &&
+      pickups[autoTarget] &&
+      canAddCargo(cargoKind(pickups[autoTarget])) &&
+      pickups[autoTarget].position.distanceToSquared(ship) < tier.range * tier.range
+    ) {
       target.current = autoTarget
     } else if (!keepTarget) {
       target.current = nearest
@@ -113,7 +128,8 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
       let p = progress.current.get(id) ?? 0
       if (id === target.current) {
         // A Synth-Bot's beam is faster
-        const reelTime = (tier.collectTime * (pickup.kind === 'relic' ? RELIC_REEL_FACTOR : 1)) / currentSpecies().harvestSpeed
+        const multiplier = pickup.kind === 'relic' ? RELIC_REEL_FACTOR : 1
+        const reelTime = (tier.collectTime * multiplier) / currentSpecies().harvestSpeed
         p = Math.min(1, p + step / reelTime)
         if (p >= 1) collectedId = id
       } else if (p > 0) {
@@ -136,8 +152,8 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
     if (beamMesh) {
       const targetMesh = children.find((c) => c.userData.id === target.current)
       beamMesh.visible = Boolean(targetMesh)
-      const isRelic = target.current !== null && pickups[target.current].kind === 'relic'
-      ;(beamMesh.material as THREE.MeshBasicMaterial).color.set(isRelic ? RELIC_COLOR : tier.beamColor)
+      const beamColor = target.current !== null && pickups[target.current].kind === 'relic' ? RELIC_COLOR : tier.beamColor
+      ;(beamMesh.material as THREE.MeshBasicMaterial).color.set(beamColor)
       if (targetMesh) {
         scratch.copy(targetMesh.position).sub(ship)
         const length = scratch.length()
@@ -152,32 +168,45 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
     const t = target.current
     const reeled = t === null ? 0 : (progress.current.get(t) ?? 0)
     if (mode !== 'pilot') setHarvest('Pilot mode only', 0)
-    else if (t !== null) setHarvest(`${pickups[t].kind === 'relic' ? 'Decoding relic' : 'Harvesting'} ${Math.round(reeled * 100)}%`, reeled)
+    else if (t !== null)
+      setHarvest(
+        `${pickups[t].kind === 'relic' ? 'Decoding relic' : 'Loading Raw Scrap'} ${Math.round(reeled * 100)}%`,
+        reeled,
+      )
     else if (inRange > 0) setHarvest(`${inRange} in range — hold F`, 0)
+    else if (cargoBlocked > 0) setHarvest('Cargo hold full — sell at Trade Relay', 0)
     else setHarvest('Nothing in range', 0)
 
     // Tell the HUD how far the sector's relic beacon is
     setRelicDistance(relic && !collected.has(relic.id) ? relic.position.distanceTo(ship) : null)
 
     if (collectedId !== null) {
+      let stored = false
       if (pickups[collectedId].kind === 'relic') {
-        collectRelic()
-        const unlocked = gameStats.relics >= RELICS_NEEDED
-        notify(
-          unlocked
-            ? 'Signal Relic recovered: Earth 2.0 coordinates decoded! Fold [J] to reach it'
-            : `Signal Relic recovered (${gameStats.relics}/${RELICS_NEEDED})`,
-          'gain',
-          4500,
-        )
+        stored = collectRelic()
+        if (stored) {
+          const unlocked = gameStats.relics >= RELICS_NEEDED
+          notify(
+            unlocked
+              ? 'Signal Relic recovered: Earth 2.0 coordinates decoded! Fold [J] to reach it'
+              : `Signal Relic recovered (${gameStats.relics}/${RELICS_NEEDED})`,
+            'gain',
+            4500,
+          )
+        }
       } else {
-        gameStats.scrap += SCRAP_PICKUP_VALUE
-        notify(`+${SCRAP_PICKUP_VALUE} Scrap`, 'gain', 1000)
+        stored = tryAddCargo('scrap')
+        if (stored) notify('Raw Scrap loaded into cargo', 'gain', 1000)
       }
-      target.current = null
-      progress.current.delete(collectedId)
-      scrapRegistry.delete(collectedId)
-      setCollected((prev) => new Set([...prev, collectedId]))
+      if (stored) {
+        target.current = null
+        progress.current.delete(collectedId)
+        scrapRegistry.delete(collectedId)
+        setCollected((prev) => new Set([...prev, collectedId]))
+      } else {
+        target.current = null
+        progress.current.set(collectedId, 0)
+      }
     }
   })
 

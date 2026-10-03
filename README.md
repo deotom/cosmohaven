@@ -1,6 +1,6 @@
 # CosmoHaven
 
-CosmoHaven is a 3D space exploration and shipbuilding game. Assemble a ship from blocks at a drydock, keep its crew alive, collect Scrap and Signal Relics, and use the Space-Fold drive to find Earth 2.0.
+CosmoHaven is a 3D space exploration and shipbuilding game. Assemble a ship from blocks at a drydock, keep its crew alive, recover cargo and Signal Relics, and use the Space-Fold drive to find Earth 2.0.
 
 ## Getting started
 
@@ -23,6 +23,8 @@ npm test
 
 Start by creating a crew member, then build and launch from the home drydock. Collect five Signal Relics across sectors to decode Earth 2.0 and establish a colony there.
 
+The economy uses **Haven Credits (HC)**. Tractor-beam pickups occupy real cargo capacity and must be sold at the Trade Relay (90% rate) or a drydock (full rate). The starting hold fits 8 units; buy one of three storage technologies from the trade panel to expand or compress it. Relics occupy cargo space and cannot be sold.
+
 ### Flight controls
 
 | Input | Action |
@@ -44,10 +46,11 @@ Start by creating a crew member, then build and launch from the home drydock. Co
 | R | Emergency hull repair |
 | V | Toggle interior view |
 | U / I | Upgrade Harvester / Auto-Pilot |
+| Trade Relay button | Sell cargo or buy storage technology |
 
 ### Shipyard controls
 
-Click a block face to queue construction; Shift-click a block to dismantle it. Use 1–6 to select Hull, Food Dispenser, Arcade, Engine, Shield, or Repair Bay, or Q to cycle the selection. Engines increase thrust, shields reduce impact damage, and crew use Repair Bays to restore hull below 75%. Drag to orbit the camera and scroll to zoom.
+Click a block face to queue construction; Shift-click a block to dismantle it. Use 1–6 to select Hull, Food Dispenser, Arcade, Engine, Shield, or Repair Bay, or Q to cycle the selection. Block and upgrade prices are paid in HC. Engines increase thrust, shields reduce impact damage, and crew use Repair Bays to restore hull below 75%. Drag to orbit the camera and scroll to zoom.
 
 ## Technology
 

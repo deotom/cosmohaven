@@ -23,9 +23,9 @@ export function SystemsPanel() {
     <div
       role="button"
       onClick={() => upgrade(system)}
-      style={{ ...upgradeButtonStyle, color: next && cost !== undefined && game.scrap < cost ? '#ff8a8a' : '#cfe8ff' }}
+      style={{ ...upgradeButtonStyle, color: next && cost !== undefined && game.credits < cost ? '#ff8a8a' : '#cfe8ff' }}
     >
-      {next && cost !== undefined ? `[${key}] Upgrade → ${next.name} · ${cost} Scrap` : 'Max tier'}
+      {next && cost !== undefined ? `[${key}] Upgrade → ${next.name} · ${cost} HC` : 'Max tier'}
     </div>
     )
   }
@@ -91,7 +91,7 @@ export function SystemsPanel() {
       {upgradeButton('autopilot', 'I', nextAutopilot)}
 
       <div style={{ marginTop: 10, fontWeight: 700, color: '#d6a8ff' }}>Fold Drive [J]</div>
-      <div style={{ opacity: 0.8 }}>Space-Fold to a new star system · {getFoldCost()} Scrap</div>
+      <div style={{ opacity: 0.8 }}>Space-Fold to a new star system · {getFoldCost()} HC</div>
       <div>
         {game.fold.phase === 'charging'
           ? `Charging ${Math.round(game.fold.charge * 100)}%`

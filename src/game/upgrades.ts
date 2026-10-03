@@ -1,4 +1,4 @@
-import { gameStats, notify, trySpendScrap } from './gameState'
+import { gameStats, notify, trySpendCredits } from './gameState'
 import { adjustedCost } from './difficulty'
 
 export type HarvesterTier = {
@@ -9,7 +9,7 @@ export type HarvesterTier = {
   autoRange: number
   /** Seconds of beam time to reel in one piece of scrap */
   collectTime: number
-  /** Scrap cost to buy this tier */
+  /** HC cost to buy this tier */
   cost: number
   beamColor: string
   blurb: string
@@ -49,7 +49,7 @@ export function upgrade(system: 'harvester' | 'autopilot') {
     return
   }
   const cost = adjustedCost(next.cost, gameStats.difficulty)
-  if (!trySpendScrap(cost)) return
+  if (!trySpendCredits(cost)) return
   if (system === 'harvester') gameStats.harvesterTier = current + 1
   else gameStats.autopilotTier = current + 1
   notify(`${label} upgraded: ${next.name}`, 'gain', 2500)

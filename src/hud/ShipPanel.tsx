@@ -1,4 +1,4 @@
-import { getBlockCost, RELICS_NEEDED, readGameStats } from '../game/gameState'
+import { getBlockCost, getCargoCapacity, getCargoVolume, RELICS_NEEDED, readGameStats } from '../game/gameState'
 import { useSector } from '../game/sector'
 import type { CameraView, GameMode, PlaceableBlockType } from '../game/types'
 import { BLOCK_COLORS, BLOCK_LABELS, hudStyle } from './styles'
@@ -24,7 +24,10 @@ export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedTyp
     <div className="hud-ship-panel" style={hudStyle}>
       <div style={{ fontWeight: 700, letterSpacing: 2, color: '#7fd4ff' }}>COSMOHAVEN · SHIPYARD</div>
       <div>Blocks: {blockCount} · Mass: {blockCount} t</div>
-      <div style={{ color: '#ffd633' }}>Scrap Metal: {game.scrap}</div>
+      <div style={{ color: '#ffd633' }}>Credits: {game.credits} HC</div>
+      <div style={{ color: getCargoVolume() >= getCargoCapacity() ? '#ff8a8a' : '#9fd4ff' }}>
+        Cargo: {game.cargo.scrap} Scrap · {game.cargo.relics} Relics ({getCargoVolume().toFixed(1)}/{getCargoCapacity()} units)
+      </div>
       <div style={{ color: '#d6a8ff' }}>Sector: {sector.name}</div>
       <div style={{ color: '#5ff0ff' }}>
         Signal Relics: {game.relics}/{RELICS_NEEDED}
@@ -64,7 +67,7 @@ export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedTyp
       {mode === 'build' && (
         <div>
           Build: <span style={{ color: BLOCK_COLORS[selectedType] }}>{BLOCK_LABELS[selectedType]}</span> ·{' '}
-          <span style={{ color: game.scrap < cost ? '#ff5d5d' : '#ffd633' }}>Cost: {cost} Scrap</span>
+          <span style={{ color: game.credits < cost ? '#ff5d5d' : '#ffd633' }}>Cost: {cost} HC</span>
         </div>
       )}
       <div style={{ marginTop: 8, opacity: 0.8 }}>

@@ -9,8 +9,18 @@ export const BLOCK_COSTS: Record<PlaceableBlockType, number> = {
   shield: 80,
   repair: 70,
 }
-export const STARTING_SCRAP = 100
-export const SCRAP_PICKUP_VALUE = 20
+export const STARTING_CREDITS = 100
+export const SCRAP_SELL_VALUE = 20
+export const BASE_CARGO_CAPACITY = 8
+
+export type CargoKind = 'scrap' | 'relics'
+const CARGO_ITEM_VOLUME: Record<CargoKind, number> = { scrap: 1, relics: 1 }
+export type StorageTechId = 'expanded-bay' | 'mass-compressor' | 'quantum-vault'
+export const STORAGE_TECHS: Record<StorageTechId, { name: string; description: string; capacity: number; volumeFactor: number; cost: number }> = {
+  'expanded-bay': { name: 'Expanded Bay', description: '+6 cargo units', capacity: 14, volumeFactor: 1, cost: 120 },
+  'mass-compressor': { name: 'Mass Compressor', description: 'Cargo occupies 55% volume', capacity: BASE_CARGO_CAPACITY, volumeFactor: 0.55, cost: 240 },
+  'quantum-vault': { name: 'Quantum Vault', description: 'Cargo occupies 30% volume · 12-unit hold', capacity: 12, volumeFactor: 0.3, cost: 450 },
+}
 
 export const FOLD_COST = 40
 /** Signal Relics (one per folded sector) needed to decode Earth 2.0's coordinates */
@@ -87,7 +97,10 @@ export type Notice = { text: string; kind: 'warning' | 'gain'; until: number }
  * sampled by the HUD a few times a second, so React doesn't re-render at 60fps.
  */
 export const gameStats = {
-  scrap: STARTING_SCRAP,
+  credits: STARTING_CREDITS,
+  cargo: { scrap: 0, relics: 0 },
+  storageTech: null as StorageTechId | null,
+  ownedStorageTechs: [] as StorageTechId[],
   difficulty: 'standard' as Difficulty,
   /** Distance remaining until the ship is inside the victory radius */
   distanceToEarth: Infinity,
@@ -95,7 +108,7 @@ export const gameStats = {
   notice: null as Notice | null,
   /** The gravity well the ship is currently inside, if any */
   well: null as WellInfo | null,
-  /** Hull integrity 0-100: knocked down by impacts, restored free at a shipyard or with Scrap in an emergency */
+  /** Hull integrity 0-100: knocked down by impacts, restored free at a shipyard or with HC in an emergency */
   hull: 100,
   /** Blocks queued at the shipyard; the first is being assembled, with its progress */
   construction: [] as { type: PlaceableBlockType; progress: number }[],
@@ -169,7 +182,7 @@ export function repairHull(amount: number) {
 /** A damaged ship is slower: full thrust at 100% hull, 55% at 0%. */
 export const hullThrustFactor = () => 0.55 + 0.45 * (gameStats.hull / 100)
 
-/** The only repair available in open space: some Scrap buys a patch-up, with a short cooldown. */
+/** The only repair available in open space: some HC buys a patch-up, with a short cooldown. */
 export function emergencyRepair() {
   if (gameStats.hull >= 100) {
     notify('Hull is at full integrity', 'gain')
@@ -180,18 +193,18 @@ export function emergencyRepair() {
     return
   }
   const cost = adjustedCost(REPAIR_COST, gameStats.difficulty)
-  if (!trySpendScrap(cost)) return
+  if (!trySpendCredits(cost)) return
   repairReadyAt = performance.now() + 4000
   repairHull(REPAIR_AMOUNT)
-  notify(`Emergency repair: hull ${Math.round(gameStats.hull)}% · ${cost} Scrap`, 'gain', 2000)
+  notify(`Emergency repair: hull ${Math.round(gameStats.hull)}% · ${cost} HC`, 'gain', 2000)
 }
 
 export const getBlockCost = (type: PlaceableBlockType) => adjustedCost(BLOCK_COSTS[type], gameStats.difficulty)
 export const getFoldCost = () => adjustedCost(FOLD_COST, gameStats.difficulty)
 export const getRepairCost = () => adjustedCost(REPAIR_COST, gameStats.difficulty)
 
-export function addScrap(amount: number) {
-  gameStats.scrap += amount
+export function addCredits(amount: number) {
+  gameStats.credits += amount
 }
 
 export function setConstruction(queue: typeof gameStats.construction) {
@@ -215,7 +228,76 @@ export function setRelicDistance(distance: number | null) {
 }
 
 export function collectRelic() {
-  gameStats.relics += 1
+  return tryAddCargo('relics')
+}
+
+export function getCargoCapacity() {
+  return gameStats.storageTech ? STORAGE_TECHS[gameStats.storageTech].capacity : BASE_CARGO_CAPACITY
+}
+
+export function getCargoVolume() {
+  const tech = gameStats.storageTech ? STORAGE_TECHS[gameStats.storageTech] : null
+  return (
+    gameStats.cargo.scrap * CARGO_ITEM_VOLUME.scrap +
+    gameStats.cargo.relics * CARGO_ITEM_VOLUME.relics
+  ) * (tech?.volumeFactor ?? 1)
+}
+
+export function canAddCargo(kind: CargoKind, amount = 1) {
+  if (!Number.isInteger(amount) || amount <= 0) return false
+  const compression = gameStats.storageTech ? STORAGE_TECHS[gameStats.storageTech].volumeFactor : 1
+  return getCargoVolume() + amount * CARGO_ITEM_VOLUME[kind] * compression <= getCargoCapacity() + 1e-9
+}
+
+export function tryAddCargo(kind: CargoKind, amount = 1) {
+  if (!canAddCargo(kind, amount)) {
+    notify('Cargo hold full · sell cargo at a Trade Relay', 'warning', 2500)
+    return false
+  }
+  gameStats.cargo[kind] += amount
+  if (kind === 'relics') gameStats.relics += amount
+  return true
+}
+
+export function trySpendCredits(cost: number): boolean {
+  if (gameStats.credits < cost) {
+    notify(`Not enough HC! Need ${cost}, have ${gameStats.credits}`, 'warning')
+    return false
+  }
+  gameStats.credits -= cost
+  return true
+}
+
+export const getStorageTechCost = (id: StorageTechId) => adjustedCost(STORAGE_TECHS[id].cost, gameStats.difficulty)
+
+export function getCargoSaleValue(atDrydock: boolean) {
+  const rawValue = gameStats.cargo.scrap * SCRAP_SELL_VALUE
+  return Math.floor(rawValue * (atDrydock ? 1 : 0.9))
+}
+
+export function sellCargo(atDrydock: boolean) {
+  const payout = getCargoSaleValue(atDrydock)
+  if (payout === 0) {
+    notify('No sellable cargo in the hold', 'warning')
+    return 0
+  }
+  const soldScrap = gameStats.cargo.scrap
+  gameStats.cargo.scrap = 0
+  gameStats.credits += payout
+  notify(`Cargo sold: ${soldScrap} Scrap → ${payout} HC${atDrydock ? '' : ' (Relay rate)'}`, 'gain', 3500)
+  return payout
+}
+
+export function purchaseStorageTech(id: StorageTechId) {
+  if (gameStats.storageTech === id) {
+    notify(`${STORAGE_TECHS[id].name} already active`, 'warning')
+    return false
+  }
+  if (!gameStats.ownedStorageTechs.includes(id) && !trySpendCredits(getStorageTechCost(id))) return false
+  if (!gameStats.ownedStorageTechs.includes(id)) gameStats.ownedStorageTechs.push(id)
+  gameStats.storageTech = id
+  notify(`${STORAGE_TECHS[id].name} installed`, 'gain', 2500)
+  return true
 }
 
 export function setHarvest(text: string, progress: number) {
@@ -245,21 +327,14 @@ export function notify(text: string, kind: Notice['kind'], durationMs = 1500) {
 }
 
 /** Deducts `cost` if the player can afford it; otherwise shows a warning and returns false. */
-export function trySpendScrap(cost: number): boolean {
-  if (gameStats.scrap < cost) {
-    notify(`Not enough Scrap! Need ${cost}, have ${gameStats.scrap}`, 'warning')
-    return false
-  }
-  gameStats.scrap -= cost
-  return true
-}
-
 /** A snapshot of the game stats for the HUD, with expired notices dropped. */
 export function readGameStats() {
   const notice = gameStats.notice && gameStats.notice.until > performance.now() ? gameStats.notice : null
   return {
     ...gameStats,
     notice,
+    cargo: { ...gameStats.cargo },
+    ownedStorageTechs: [...gameStats.ownedStorageTechs],
     harvest: { ...gameStats.harvest },
     construction: gameStats.construction.map((c) => ({ ...c })),
     modules: { ...gameStats.modules },

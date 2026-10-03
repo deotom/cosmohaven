@@ -11,6 +11,7 @@ import { usePointerLock } from './game/usePointerLock'
 import type { CameraView, GameMode, PlaceableBlockType } from './game/types'
 import { handleGameKey } from './input/keymap'
 import { ArrivalPanel } from './hud/ArrivalPanel'
+import { TradePanel } from './hud/TradePanel'
 import { buttonStyle } from './hud/styles'
 import { useSampled } from './hud/useSampled'
 import { ShipPanel } from './hud/ShipPanel'
@@ -143,6 +144,7 @@ export default function App() {
   const mode: GameMode = dock.phase === 'docked' ? 'build' : 'pilot'
   const [cameraView, setCameraView] = useState<CameraView>('chase')
   const [interior, setInterior] = useState(false)
+  const [tradeOpen, setTradeOpen] = useState(false)
   const [victory, setVictory] = useState(false)
   // Physics keeps running briefly after victory so the ship (now heavily damped) glides to a stop
   const [frozen, setFrozen] = useState(false)
@@ -251,6 +253,9 @@ export default function App() {
         }}
       >
         <DockButton />
+        <div role="button" onClick={() => setTradeOpen((open) => !open)} style={buttonStyle}>
+          {mode === 'build' ? 'DRYDOCK TRADE' : 'TRADE RELAY'}
+        </div>
         {!victory && <div role="button" onClick={() => setPaused(true)} style={buttonStyle}>PAUSE [Esc]</div>}
         <div role="button" onClick={() => setInterior((v) => !v)} style={buttonStyle}>
           VIEW: {interior ? 'INTERIOR' : 'EXTERIOR'} [V]
@@ -264,6 +269,7 @@ export default function App() {
 
       <FoldOverlay />
 
+      {tradeOpen && <TradePanel onClose={() => setTradeOpen(false)} />}
       {paused && (
         <PauseMenu
           preferences={inputPreferences}
