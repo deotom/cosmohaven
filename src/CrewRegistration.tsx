@@ -65,6 +65,7 @@ export function CrewRegistration({ onStart }: { onStart: (profile: CrewProfile) 
 
   return (
     <div
+      className="crew-registration"
       style={{
         position: 'absolute',
         inset: 0,
@@ -78,8 +79,8 @@ export function CrewRegistration({ onStart }: { onStart: (profile: CrewProfile) 
         overflow: 'auto',
       }}
     >
-      <div style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: 28, padding: 30, maxWidth: 1040, width: '100%', margin: 'auto' }}>
-        <div style={{ flex: '1 1 440px', minWidth: 300 }}>
+      <div className="crew-registration-card" style={{ ...card, display: 'flex', flexWrap: 'wrap', gap: 28, padding: 30, maxWidth: 1040, width: '100%', margin: 'auto' }}>
+        <div className="crew-registration-form" style={{ flex: '1 1 440px', minWidth: 300 }}>
           <div style={{ fontSize: 13, letterSpacing: 6, color: '#7fd4ff' }}>COSMOHAVEN</div>
           <h1 style={{ margin: '4px 0 18px', fontSize: 32, letterSpacing: 1 }}>Crew Registration</h1>
 
@@ -205,8 +206,8 @@ export function CrewRegistration({ onStart }: { onStart: (profile: CrewProfile) 
           </div>
         </div>
 
-        <div style={{ flex: '1 1 280px', minWidth: 240, minHeight: 420, borderRadius: 12, overflow: 'hidden', background: 'radial-gradient(circle at 50% 30%, #ffefd2 0%, #ffcfae 55%, #f5a99f 100%)' }}>
-          <Canvas camera={{ position: [0, 0.25, 3.3], fov: 35 }}>
+        <div className="crew-preview" style={{ flex: '1 1 280px', minWidth: 240, minHeight: 420, borderRadius: 12, overflow: 'hidden', background: 'radial-gradient(circle at 50% 30%, #ffefd2 0%, #ffcfae 55%, #f5a99f 100%)' }}>
+          <Canvas dpr={[1, 1.5]} camera={{ position: [0, 0.25, 3.3], fov: 35 }}>
             {/* Soft, warm, even lighting: the cosy look comes from gentle ambient light and a mild key */}
             <ambientLight intensity={1.6} color="#fff3e0" />
             <hemisphereLight args={['#cfeaff', '#ffd9b8', 1.1]} />

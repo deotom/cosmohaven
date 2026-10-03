@@ -1,16 +1,16 @@
 # Cosmohaven — Plan & Checklist
 
 ความรู้พื้นฐานดูที่ [KNOWLEDGE.md](KNOWLEDGE.md)
-สัญลักษณ์: `[x]` = มีในโค้ดแล้ว (ยืนยันจากการอ่านโค้ด ไม่ได้รันเกม) · `[ ]` = ยังไม่ทำ / ยังไม่ยืนยัน
+สัญลักษณ์: `[x]` = เสร็จและตรวจแล้ว · `[~]` = กำลังทำ · `[ ]` = ยังไม่ทำ / ยังไม่ยืนยัน
 
 ## Phase 0 — เตรียมการทำงานต่อ (ทำก่อน)
 
-- [ ] `git init` + commit สถานะปัจจุบัน (ตอนนี้ไม่ใช่ git repo เสี่ยงงานหาย)
-- [ ] `npm install` แล้วรัน `npm run dev` เปิดเกม เล่นให้จบหนึ่งรอบเพื่อดูสถานะจริง
-- [ ] `npm run build` ผ่านหรือไม่ (ยังไม่ได้ตรวจ)
-- [ ] `npm run lint` ผ่านหรือไม่ (ยังไม่ได้ตรวจ)
-- [ ] แก้ README.md ให้เป็นคำอธิบายเกมจริง (ตอนนี้เป็น template ของ Vite)
-- [ ] ลบ comment ลอย `1-based tiers` ใน `gameState.ts` และไฟล์ asset ที่ไม่ได้ใช้ (`react.svg`, `vite.svg`, `hero.png` ถ้าไม่ได้ import)
+- [x] `git init` + commit สถานะเริ่มต้น (`a0e8a1f`)
+- [~] ตรวจ dependencies/เปิดเกม/เล่นให้จบหนึ่งรอบ — dependencies พร้อม, เข้า Shipyard, undock และ fold สำเร็จ 2 ครั้ง; ยังไม่ได้เล่น campaign จนชนะ
+- [x] `npm run build` ผ่าน (ตรวจเมื่อ 2026-10-03)
+- [x] `npm run lint` ผ่าน (ตรวจเมื่อ 2026-10-03)
+- [x] แก้ README.md ให้เป็นคำอธิบายเกมจริง
+- [x] ลบ comment ลอย `1-based tiers` ใน `gameState.ts` และ asset ที่ไม่ได้ import (`react.svg`, `vite.svg`, `hero.png`)
 
 ## Phase 1 — ฟีเจอร์หลักที่มีอยู่แล้ว (baseline)
 
@@ -29,32 +29,33 @@
 
 ## Phase 2 — ความเสถียรและคุณภาพโค้ด
 
-- [ ] แยก `App.tsx` ออกเป็นไฟล์ (`hud/SystemsPanel`, `hud/ShipPanel`, `hud/ArrivalPanel`, `hud/ShipyardPanel`, `input/keymap`, `scene/Scene`)
-- [ ] ย้าย key handler ไปไฟล์ keymap เดียว และทำตารางปุ่มให้ HUD ใช้ร่วม (ตอนนี้ข้อความปุ่มใน HUD กับ handler แยกกัน)
-- [ ] ตรวจ memory leak เมื่อ fold หลายครั้ง (geometry/texture/physics body ของ sector เก่าถูก dispose หรือไม่)
-- [ ] เพิ่ม unit test (Vitest) สำหรับ logic ที่ pure: `rng`, `sector` (seed เดิม → ผลเดิม), `gravity`, `docking`, `Pathfinding`, `upgrades`, `gameState` (trySpendScrap, requestArrival)
-- [ ] เพิ่ม test สำหรับ `runAutopilot` (input → output) เช่น หลบอุกกาบาต, ลงจอดไม่เกิน 12 u/s
-- [ ] เปิด type-aware lint ตามที่ README แนะนำ (`oxlint-tsgolint`)
-- [ ] ตรวจ performance: FPS ตอนมีอุกกาบาต + หลาย sector, `dpr`, shadow
+- [x] แยก `App.tsx` ออกเป็นไฟล์ `hud/SystemsPanel`, `hud/ShipPanel`, `hud/ArrivalPanel`, `hud/ShipyardPanel`, `input/keymap`, `scene/Scene`
+- [x] ย้าย key handler ไปไฟล์ keymap เดียว และทำตารางปุ่มให้ HUD ใช้ร่วม; `useKeyboard` ใช้ flight-key codes จาก binding table เดียวกัน
+- [x] ตรวจ lifecycle ตอน fold: Scene subtree ถูกสร้างใหม่ต่อ sector, Planet/Earth dispose textures, meteor tracks ถูกลบ/เคลียร์; ทดสอบ fold 2 ครั้งไม่พบ error (ยังไม่ได้ profile heap/GPU memory)
+- [x] เพิ่ม unit test (Vitest) สำหรับ logic ที่ pure: `rng`, `sector` (seed เดิม → ผลเดิม), `gravity`, docking geometry, `Pathfinding`, `upgrades`, `gameState` (trySpendScrap, requestArrival) — 14 tests ผ่าน
+- [x] เพิ่ม test สำหรับ `runAutopilot` (input → output): หลบอุกกาบาตและสั่งเบรกขณะลงจอดเร็วเกิน safe speed
+- [x] เปิด type-aware lint ด้วย `oxlint-tsgolint` (ติดตั้งแล้วและ `npm run lint` ผ่าน)
+- [~] ตรวจ performance: code splitting ลด entry chunk จาก ~2,044 kB เหลือ ~80 kB; `cannon` ยัง 585.78 kB (148.94 kB gzip) และ build เตือน chunk >500 kB; วัดได้ 96 FPS ใน browser sample 2 วินาทีขณะมี meteor 1 ลูก (หลัง fold 2 ครั้ง) แต่ยังไม่ใช่ hardware/device benchmark
 
 ## Phase 3 — Gameplay เพิ่มเติม (ข้อเสนอ ยังไม่ได้ตัดสินใจ)
 
 - [ ] Save/Load (localStorage): scrap, บล็อกของยาน, tier, relic, เผ่า/รูปลักษณ์
 - [ ] Tutorial / onboarding สั้น ๆ ตอนเริ่มเกม (ปุ่มเยอะมาก)
-- [ ] เมนู pause + ตั้งค่า (sensitivity เมาส์, ปุ่ม)
-- [ ] เสียง (engine, beam, alarm อุกกาบาต, ambient) — ตรวจก่อนว่ามีแล้วหรือไม่
+- [x] เมนู pause + ตั้งค่า — ปุ่ม Pause/`Esc`, pause simulation, ปรับ mouse sensitivity และ remap keys พร้อมตรวจ collision
+- [x] ตรวจระบบเสียง — ยังไม่พบ audio/sound playback ใน `src/`
 - [ ] ความยากปรับได้ (ความถี่อุกกาบาต, ราคา)
-- [ ] Hunger/Sanity ที่ต่ำมีผลจริงต่อเกม (ตรวจว่าตอนนี้มีผลอะไร)
+- [x] ตรวจ Hunger/Sanity: ต่ำกว่า 40 ลูกเรือจะหา Food Dispenser/Arcade และฟื้นค่าที่บล็อก; ถ้าไม่มีบล็อกจะแจ้งใน HUD แต่ค่า 0 ยังไม่มี penalty/game-over โดยตรง
 - [ ] บล็อกชนิดใหม่ (เช่น เครื่องยนต์เสริม, โล่, ห้องซ่อม) และอัปเกรดอื่น
 - [ ] เป้าหมายรอง / เหตุการณ์สุ่มอื่นนอกจากอุกกาบาต
-- [ ] หน้าจอ Game over (hull 0 เกิดอะไรขึ้นตอนนี้? ตรวจ)
+- [x] ตรวจพฤติกรรม hull 0 — hull ถูก clamp ที่ 0, ไม่มี Game Over state; ยานยังบินได้แต่ thrust เหลือ 55%
 
 ## Phase 4 — Polish & Release
 
-- [ ] รองรับขนาดจอ/ความละเอียดต่าง ๆ, ตรวจ HUD บนจอเล็ก
-- [ ] Code-splitting / ลดขนาด bundle (three ใหญ่)
-- [ ] ตั้งค่า deploy (static hosting) + `npm run build` ใน CI
-- [ ] ตั้งชื่อ title/favicon/meta ให้ตรงเกม
+- [x] รองรับขนาดจอ/ความละเอียดต่าง ๆ, ตรวจ HUD บนจอเล็กที่ viewport 390×844
+- [~] Code-splitting / ลดขนาด bundle — แยก Scene แบบ lazy และแบ่ง vendor chunks แล้ว; `cannon` ยังเกิน 500 kB (ยังไม่เปลี่ยน physics engine)
+- [x] ตั้ง GitHub Actions CI สำหรับ `npm ci`, lint, test และ build
+- [~] ตั้งค่า GitHub Pages — เพิ่ม deploy job ต่อจาก CI และตั้ง Vite base ตามชื่อ repository แล้ว; ต้องเปิด Pages source เป็น GitHub Actions และยังไม่ได้ทดสอบ deploy จริง (ไม่มี remote ใน workspace)
+- [x] ตั้งชื่อ title และ meta ให้ตรงเกม (favicon เดิม `/favicon.svg` ยังใช้งานอยู่)
 
 ## วิธีกลับมาทำงานต่อ (quick start)
 

@@ -86,7 +86,6 @@ export const gameStats = {
   notice: null as Notice | null,
   /** The gravity well the ship is currently inside, if any */
   well: null as WellInfo | null,
-  /** 1-based tiers; see upgrades.ts */
   /** Hull integrity 0-100: knocked down by impacts, restored free at a shipyard or with Scrap in an emergency */
   hull: 100,
   /** Blocks queued at the shipyard; the first is being assembled, with its progress */

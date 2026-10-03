@@ -44,6 +44,7 @@ import { createGravitySample, sampleGravity } from './gravity'
 import { gridKey, type Block, type BlockType, type GameMode, type GridPos, type PlaceableBlockType } from './types'
 import { useKeyboard } from './useKeyboard'
 import { useMouseLook } from './useMouseLook'
+import { getControlCode, getMouseSensitivity } from '../input/preferences'
 import { currentRole, currentSpecies } from './crewProfile'
 import { construction, dockInfo, dockRequests, getDock } from './dock'
 import { useDocking } from './docking'
@@ -60,7 +61,18 @@ const BLOCK_STYLES: Record<BlockType, { color: string; emissive: string; emissiv
 }
 
 /** Any of these held means the pilot wants the controls back from the auto-pilot. */
-const MANUAL_KEYS = ['KeyW', 'KeyS', 'KeyA', 'KeyD', 'KeyQ', 'KeyE', 'ArrowUp', 'ArrowDown', 'Space', 'ShiftLeft', 'ShiftRight']
+const MANUAL_CONTROLS = [
+  'thrustForward',
+  'thrustBackward',
+  'yawLeft',
+  'yawRight',
+  'rollLeft',
+  'rollRight',
+  'pitchDown',
+  'pitchUp',
+  'strafeUp',
+  'strafeDown',
+] as const
 
 /** Seconds a shipyard drone needs to assemble each kind of block (before the role's build-speed bonus) */
 const BUILD_TIME: Record<PlaceableBlockType, number> = { hull: 1.6, food: 2.6, arcade: 2.6 }
@@ -452,7 +464,10 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     const descending = gameStats.arrival.phase === 'descent'
     const held = keys.current
     // While landing, Space and Shift are the throttle lever rather than an override
-    const overrideKeys = descending ? MANUAL_KEYS.filter((k) => k !== 'Space' && !k.startsWith('Shift')) : MANUAL_KEYS
+    const manualKeys = MANUAL_CONTROLS.map(getControlCode)
+    const overrideKeys = descending
+      ? manualKeys.filter((key) => key !== getControlCode('strafeUp') && key !== getControlCode('strafeDown'))
+      : manualKeys
     if (canFly && overrideKeys.some((key) => held.has(key))) {
       if (gameStats.autopilot.engaged) {
         setAutopilot({ engaged: false, status: 'Manual override' })
@@ -546,8 +561,8 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     // Fold this frame's mouse movement into the stick, then let it drift back to centre
     const clamp = (v: number) => Math.max(-1, Math.min(1, v))
     const moved = takeMouseMovement()
-    s.x = clamp(s.x + moved.x * MOUSE_SENSITIVITY)
-    s.y = clamp(s.y + moved.y * MOUSE_SENSITIVITY)
+    s.x = clamp(s.x + moved.x * MOUSE_SENSITIVITY * getMouseSensitivity())
+    s.y = clamp(s.y + moved.y * MOUSE_SENSITIVITY * getMouseSensitivity())
     const mouseYaw = -s.x // mouse right = nose right
     const mousePitch = INVERT_MOUSE_Y ? s.y : -s.y // movementY is negative when the mouse moves up
     const recentre = Math.exp(-MOUSE_RETURN_RATE * Math.min(dt, 0.1))
@@ -556,13 +571,13 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
 
     const k = keys.current
     const axis = (pos: boolean, neg: boolean) => (pos ? 1 : 0) - (neg ? 1 : 0)
-    const forward = axis(k.has('KeyW'), k.has('KeyS'))
-    const lift = axis(k.has('Space'), k.has('ShiftLeft') || k.has('ShiftRight'))
+    const forward = axis(k.has(getControlCode('thrustForward')), k.has(getControlCode('thrustBackward')))
+    const lift = axis(k.has(getControlCode('strafeUp')), k.has(getControlCode('strafeDown')) || k.has('ShiftRight'))
     // Rotation inputs, as torque about the ship's local axes (+X right, +Y up, +Z backwards)
-    const yaw = clamp(axis(k.has('KeyA'), k.has('KeyD')) + mouseYaw) // +Y: nose swings left
-    const pitch = clamp(axis(k.has('ArrowDown'), k.has('ArrowUp')) + mousePitch) // +X: nose up (Up arrow pushes the nose down)
+    const yaw = clamp(axis(k.has(getControlCode('yawLeft')), k.has(getControlCode('yawRight'))) + mouseYaw) // +Y: nose swings left
+    const pitch = clamp(axis(k.has(getControlCode('pitchUp')), k.has(getControlCode('pitchDown'))) + mousePitch) // +X: nose up
     // E docks when a station is in range, so it only rolls the ship when there's nothing to dock with
-    const roll = axis(k.has('KeyQ'), dockInfo.canDock ? false : k.has('KeyE')) // +Z: left wing down
+    const roll = axis(k.has(getControlCode('rollLeft')), dockInfo.canDock ? false : k.has(getControlCode('rollRight'))) // +Z: left wing down
 
     // Ship-local thrust: -Z is the ship's nose
     if (forward || lift) {

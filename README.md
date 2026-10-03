@@ -1,32 +1,58 @@
-# React + TypeScript + Vite
+# CosmoHaven
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+CosmoHaven is a 3D space exploration and shipbuilding game. Assemble a ship from blocks at a drydock, keep its crew alive, collect Scrap and Signal Relics, and use the Space-Fold drive to find Earth 2.0.
 
-Currently, two official plugins are available:
+## Getting started
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Requirements: Node.js and npm.
 
-## React Compiler
-
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```sh
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+To verify a production build and the code quality checks:
+
+```sh
+npm run build
+npm run lint
+npm test
+```
+
+## How to play
+
+Start by creating a crew member, then build and launch from the home drydock. Collect five Signal Relics across sectors to decode Earth 2.0 and establish a colony there.
+
+### Flight controls
+
+| Input | Action |
+|---|---|
+| Mouse | Steer (click to capture; Esc to release) |
+| W / S | Thrust forward / backward |
+| A / D | Yaw |
+| Up / Down | Pitch |
+| Q / E | Roll |
+| Space / Shift | Strafe up / down |
+| C | Switch chase / orbit camera |
+| F | Hold to harvest Scrap |
+| P / Shift+P | Toggle auto-pilot / cycle its task |
+| N / T | Next waypoint / cycle target |
+| O / L | Enter orbit / initiate landing |
+| J | Space-Fold to another sector |
+| E | Dock when near a station |
+| Esc | Pause / resume |
+| R | Emergency hull repair |
+| V | Toggle interior view |
+| U / I | Upgrade Harvester / Auto-Pilot |
+
+### Shipyard controls
+
+Click a block face to queue construction; Shift-click a block to dismantle it. Use 1 / 2 / 3 to select Hull / Food Dispenser / Arcade, or Q to cycle the selection. Drag to orbit the camera and scroll to zoom.
+
+## Technology
+
+Built with React, TypeScript, Vite, Three.js, React Three Fiber, and Cannon physics. See [docs/KNOWLEDGE.md](docs/KNOWLEDGE.md) for the architecture, gameplay systems, and implementation caveats, and [docs/PLAN.md](docs/PLAN.md) for the project checklist.
+
+## Deployment
+
+GitHub Actions runs lint, tests, and a production build on pushes and pull requests. A push to the repository's default branch deploys the site to GitHub Pages after verification succeeds. Set **Settings → Pages → Build and deployment → Source** to **GitHub Actions** in the repository; Vite applies the repository base path during the Actions build.

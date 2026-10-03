@@ -1,21 +1,5 @@
 import { useEffect, useRef } from 'react'
-
-/** Keys the browser would otherwise act on (scrolling, etc.) that flight uses. */
-const FLIGHT_KEYS = new Set([
-  'Space',
-  'ArrowUp',
-  'ArrowDown',
-  'ArrowLeft',
-  'ArrowRight',
-  'KeyW',
-  'KeyA',
-  'KeyS',
-  'KeyD',
-  'KeyQ',
-  'KeyE',
-  'ShiftLeft',
-  'ShiftRight',
-])
+import { flightKeyCodes } from '../input/keymap'
 
 /**
  * Normalises a keyboard event to a `KeyboardEvent.code`-style name. `code` is empty or
@@ -47,7 +31,7 @@ export function useKeyboard(captureFlightKeys: boolean) {
     const held = keys.current
     const down = (e: KeyboardEvent) => {
       const name = keyName(e)
-      if (capture.current && FLIGHT_KEYS.has(name) && !e.ctrlKey && !e.metaKey && !e.altKey) e.preventDefault()
+      if (capture.current && flightKeyCodes().has(name) && !e.ctrlKey && !e.metaKey && !e.altKey) e.preventDefault()
       held.add(name)
     }
     const up = (e: KeyboardEvent) => held.delete(keyName(e))

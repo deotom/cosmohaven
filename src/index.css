@@ -19,3 +19,110 @@ body {
   overflow: hidden;
   background: #02030a;
 }
+
+@media (max-width: 900px) {
+  .hud-ship-panel {
+    box-sizing: border-box;
+    top: 8px !important;
+    left: 8px !important;
+    right: 8px !important;
+    max-height: 25vh;
+    overflow-y: auto;
+    padding: 8px 12px !important;
+    font-size: 11px !important;
+    line-height: 1.4 !important;
+    pointer-events: auto !important;
+  }
+
+  .hud-right-stack {
+    top: auto !important;
+    left: 8px !important;
+    right: 8px !important;
+    bottom: calc(56px + 21vh) !important;
+    max-height: 20vh;
+    overflow-y: auto;
+    gap: 6px !important;
+    pointer-events: auto;
+  }
+
+  .hud-right-stack > div {
+    box-sizing: border-box;
+    max-height: 19vh;
+    min-width: 0 !important;
+    overflow-y: auto;
+    padding: 8px !important;
+    font-size: 11px !important;
+  }
+
+  .hud-shipyard-panel {
+    box-sizing: border-box;
+    right: 8px !important;
+    bottom: 56px !important;
+    left: 8px !important;
+    width: auto !important;
+    max-height: 20vh;
+    overflow-y: auto;
+    padding: 8px !important;
+    pointer-events: auto !important;
+  }
+
+  .hud-arrival-panel {
+    top: 27vh !important;
+    min-width: 0 !important;
+    width: calc(100vw - 16px);
+    padding: 8px !important;
+    font-size: 12px !important;
+  }
+
+  .hud-dock-prompt {
+    bottom: calc(56px + 20vh) !important;
+    max-width: calc(100vw - 24px);
+    padding: 8px 12px !important;
+    font-size: 13px !important;
+    text-align: center;
+  }
+
+  .hud-bottom-controls {
+    bottom: 8px !important;
+    left: 8px;
+    width: calc(100vw - 16px);
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px !important;
+  }
+
+  .hud-bottom-controls > * {
+    padding: 7px 9px !important;
+    font-size: 10px !important;
+  }
+}
+
+@media (max-width: 600px) {
+  .crew-registration {
+    align-items: flex-start !important;
+    padding: 8px !important;
+  }
+
+  .crew-registration-card {
+    gap: 12px !important;
+    padding: 14px !important;
+  }
+
+  .crew-registration-form,
+  .crew-preview {
+    min-width: 0 !important;
+    flex-basis: 100% !important;
+  }
+
+  .crew-preview {
+    min-height: 240px !important;
+  }
+
+  .hud-right-stack {
+    bottom: calc(56px + 21vh) !important;
+  }
+
+  .hud-arrival-panel {
+    top: 26vh !important;
+  }
+}

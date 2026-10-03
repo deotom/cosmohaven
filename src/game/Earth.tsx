@@ -1,6 +1,6 @@
 import { useSphere } from '@react-three/cannon'
 import { useFrame } from '@react-three/fiber'
-import { useMemo, useRef, type RefObject } from 'react'
+import { useEffect, useMemo, useRef, type RefObject } from 'react'
 import * as THREE from 'three'
 import { gameStats } from './gameState'
 import { Atmosphere } from './Atmosphere'
@@ -70,6 +70,14 @@ export function Earth({ body, shipPosition }: { body: PlanetSpec; shipPosition: 
   const texture = useMemo(() => createSurfaceTexture(), [])
   const clouds = useMemo(() => createCloudTexture(2050, 0.5), [])
   const center = useMemo(() => new THREE.Vector3(...body.position), [body])
+
+  useEffect(
+    () => () => {
+      texture.dispose()
+      clouds.dispose()
+    },
+    [texture, clouds],
+  )
 
   useFrame((_, dt) => {
     if (planet.current) planet.current.rotation.y += dt * 0.02

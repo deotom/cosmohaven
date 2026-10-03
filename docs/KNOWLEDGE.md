@@ -22,19 +22,22 @@
 | Physics | `@react-three/cannon` (gravity ของ world = 0; แรงโน้มถ่วงดาวเคราะห์คำนวณเอง) |
 | Post-FX | `@react-three/postprocessing` + `postprocessing` (bloom, tone mapping) |
 | Lint | oxlint (`.oxlintrc.json`) |
-| Test | **ยังไม่มี** |
+| Test | Vitest สำหรับ game logic และ keymap (`src/game/game.test.ts`) |
 
-คำสั่ง (`package.json`): `npm run dev` · `npm run build` (`tsc -b && vite build`) · `npm run lint` · `npm run preview`
+คำสั่ง (`package.json`): `npm run dev` · `npm run build` (`tsc -b && vite build`) · `npm run lint` · `npm test` · `npm run preview`
 
-> ไม่ใช่ git repo (ณ ตอนเขียนเอกสารนี้) — ควร `git init` ก่อนทำงานต่อ (ดู PLAN)
+> Git ถูกเริ่มต้นแล้ว โดย commit สถานะเริ่มต้นคือ `a0e8a1f` (ดู PLAN)
 
 ## 3. โครงสร้างไฟล์
 
 ```
 src/
   main.tsx              entry, StrictMode
-  App.tsx               (~40KB) Canvas, Scene, กล้อง, HUD ทุก panel, key handler หลัก
+  App.tsx               ประกอบหน้าเกมและ state ของ UI
   CrewRegistration.tsx  หน้าเลือกเผ่า/รูปลักษณ์
+  hud/                  HUD panels, status readers, styles และ sampled state hook
+  input/keymap.ts       binding table, key handler และคำอธิบายปุ่มที่ HUD ใช้ร่วมกัน
+  scene/Scene.tsx       กล้องและฉาก Three.js (โหลดแบบ lazy)
   game/
     gameState.ts        state กลาง (gameStats) + ค่าคงที่เกม + helper (notify, trySpendScrap, ...)
     types.ts            BlockType, GridPos, crewStats, hazardStats
@@ -82,11 +85,16 @@ Task: `nav | harvest | hold | evac | orbit | land | dock` — `Shift+P` วน�
 ฟีเจอร์ขึ้นกับ tier: Basic (บินตรง) → Advanced (หลบอุกกาบาต) → Expert (burn ประหยัด + lock orbit)
 การมาถึงดาวเคราะห์: ที่ 97% ของ well radius เข้า `ArrivalPhase` (`choice → insertion → orbiting` หรือ `deorbit → descent → landed`)
 
-### 4.5 ระบบเป้าหมาย (Target)
+### 4.5 ปุ่มควบคุม
+`input/keymap.ts` เป็นแหล่งข้อมูลกลางของปุ่มที่มี action และข้อความช่วยใน HUD ส่วน `game/useKeyboard.ts`
+ใช้ binding table เดียวกันเพื่อกรองปุ่มที่ต้องป้องกัน browser default ระหว่างบิน; `input/preferences.ts` รองรับการ remap
+ปุ่มและปรับ mouse sensitivity โดยตรวจ key ซ้ำตามโหมดก่อนบันทึกใน localStorage
+
+### 4.6 ระบบเป้าหมาย (Target)
 `TargetRef {kind, key, name}` — `key` unique ใน sector, `resolveTarget()` คืน false ถ้าของหายไป (เก็บแล้ว/หมดอายุ/fold ออก)
 `T` วนเป้า, เลข `1–4` เรียก action ตาม kind (`targetActions.ts`), คลิกขวา/context menu
 
-### 4.6 Physics
+### 4.7 Physics
 - `Physics gravity={[0,0,0]}`; แรงดึงดูดของดาว = `gm / r²` คำนวณใน `gravity.ts`
 - ยานมี thrust 8 u/s², cruise ~19–22 u/s; แรงที่ขอบ well ≈ 0.25 ต้อง < thrust เสมอ (ออกจาก well ได้)
 - อุกกาบาต: mass 40, speed 18, spawn ห่าง 80, อายุ 20s, ตัวแรกที่ 6s แล้วทุก 15–20s
@@ -113,6 +121,11 @@ Task: `nav | harvest | hold | evac | orbit | land | dock` — `Shift+P` วน�
 - **Synth-Bot** — ไม่หิว, beam เร็ว +25%, sanity ลดเร็ว +25% (ต้องใช้ Arcade)
 - **Floran** — ฟื้น hunger/sanity เมื่ออยู่ในแสง, scan range +20%
 
+### Hunger / Sanity (`Crew.tsx`)
+- Hunger ลด 1.5 จุด/วินาที, Sanity ลด 0.5 จุด/วินาที; เมื่อค่าต่ำกว่า 40 ลูกเรือจะหา Food Dispenser หรือ Arcade ด้วย pathfinding และใช้บล็อกเพื่อฟื้น (ปกติ 15 จุด/วินาที)
+- ถ้าไม่มีบล็อกที่ต้องการ HUD แสดงสถานะหิวหรือ Sanity ต่ำ; ตรวจแล้วว่าค่าต่ำ/ศูนย์ไม่ได้ทำให้ hull หรือความเร็วลด และไม่ทำให้ game over โดยตรง
+- ตรวจ `src/` แล้ว ยังไม่พบระบบเล่นเสียง; เมื่อ hull ถึง 0 เกมยังไม่เข้า Game Over และ thrust เหลือ 55% (`hullThrustFactor`)
+
 ## 6. ปุ่มควบคุม
 
 **Pilot:** เมาส์=เลี้ยว (คลิกเพื่อ lock, Esc ปล่อย) · W/S ดัน หน้า/หลัง · A/D yaw · ↑/↓ pitch · Q/E roll · Space/Shift strafe ขึ้น/ลง ·
@@ -120,13 +133,15 @@ C กล้อง chase/orbit · F ถือเพื่อเก็บ Scrap ·
 O/L orbit/land ที่ดาว · J Space-Fold · R ซ่อมฉุกเฉิน · E dock · V interior view · U/I อัปเกรด Harvester/Auto-Pilot
 
 **Build (docked):** คลิกหน้าบล็อก=สั่งสร้าง · Shift+คลิก=รื้อ · 1/2/3 หรือ Q เลือก Hull/Food/Arcade · ลาก=หมุนกล้อง · E=undock
+**Pause/settings:** ปุ่ม PAUSE หรือ `Esc` หยุด simulation; ตั้ง mouse sensitivity และ remap ปุ่มได้จากเมนู
 
 ## 7. จุดที่ต้องระวัง / ข้อสังเกต
 
-1. `App.tsx` ใหญ่ (~40KB) รวม HUD ทั้งหมด + key handler — เป็นผู้ต้องสงสัยแรกถ้าต้อง refactor
-2. `Character.tsx` (~36KB), `Ship.tsx` (~30KB), `autopilot.ts` (~26KB) ก็ใหญ่เช่นกัน
-3. Key handler ใน `App.tsx` ผูก `E` ทั้ง dock และ roll (Q/E) — เช็คลำดับ `if/else` ก่อนเพิ่มปุ่ม
-4. `README.md` ยังเป็น template ของ Vite ไม่ได้อธิบายเกม
-5. ไม่มี test, ไม่มี save, ไม่มีเสียง (จากที่เห็นในโครงสร้างไฟล์ — ยังไม่ได้ยืนยัน audio ด้วย grep)
-6. Placeholder ใน `gameStats` มี comment ลอย `/** 1-based tiers; see upgrades.ts */` ที่ไม่ได้ติดกับ field ใด (เหลือจาก refactor)
-7. เอกสารนี้ **ไม่ได้รัน build/lint/เกม** — สถานะว่าผ่านหรือไม่ยังไม่ทราบ ดู PLAN ข้อ Phase 0
+1. `Character.tsx`, `Ship.tsx`, `autopilot.ts` ยังเป็นไฟล์ใหญ่; แก้เฉพาะเมื่อมีเหตุผลเฉพาะส่วน
+2. `E` ใช้ทั้ง dock/undock และ roll; keymap ต้องรักษาพฤติกรรมนี้ (ใน pilot ยังส่งปุ่มให้ flight controller ด้วย)
+3. Planet และ Earth สร้าง texture เองและต้อง dispose เมื่อ unmount; texture ของสถานีเป็น cache ที่ใช้ซ้ำ
+4. Sector เปลี่ยนด้วย key ของ Scene subtree; Planet/Earth dispose textures, meteor tracks ลบเมื่อ unmount และเคลียร์เมื่อเปลี่ยน sector; fold 2 ครั้งผ่านโดยไม่พบ error แต่ยังไม่ได้ profile heap/GPU memory
+5. README อธิบายการเล่นแล้ว; ไม่มี Save/Load หรือเสียงในขณะนี้
+6. Build/lint/test และการเปิดฉากตรวจแล้วบางส่วน; ยังไม่ได้ยืนยันการเล่น campaign จนชนะ ดูสถานะใน PLAN
+7. GitHub Pages ต้องใช้ base path `/<repository>/`; Vite ตั้งค่านี้อัตโนมัติเฉพาะใน GitHub Actions ส่วน local build ใช้ `/`
+8. เมื่อทำ checklist item เสร็จ ให้รัน validation ที่เกี่ยวข้อง อัปเดต PLAN/เอกสารดีไซน์ แล้ว commit แยกตามหัวข้อเพื่อให้ย้อนดูได้ง่าย
