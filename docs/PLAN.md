@@ -56,7 +56,7 @@
 - [x] รองรับขนาดจอ/ความละเอียดต่าง ๆ, ตรวจ HUD บนจอเล็กที่ viewport 390×844
 - [~] Code-splitting / ลดขนาด bundle — แยก Scene แบบ lazy และแบ่ง vendor chunks แล้ว; ณ 2026-10-04 `cannon` ยัง 585.78 kB หลัง minify (148.94 kB gzip) และยังเตือน >500 kB. `@react-three/cannon` ส่ง dist เป็น bundled entry; ต้องประเมินการแยก physics package/engine ก่อนเปลี่ยน dependency (ยังไม่แก้ด้วยการเพิ่ม warning limit)
 - [x] ตั้ง GitHub Actions CI สำหรับ `npm ci`, lint, test และ build
-- [~] ตั้งค่า GitHub Pages — workflow มี upload/deploy job และ Vite base รองรับชื่อ repository แล้ว แต่ workspace **ไม่มี git remote**; ยัง push/ดู repository settings หรือทดสอบ URL deployment จริงไม่ได้. ต้องกำหนด remote และเปิด Pages source เป็น GitHub Actions ก่อน
+- [~] ตั้งค่า GitHub Pages — workflow มี upload/deploy job และ Vite base รองรับชื่อ repository แล้ว; สร้าง public repository [deotom/cosmohaven](https://github.com/deotom/cosmohaven) และตั้ง `origin` ใน local แล้ว แต่ repository ยังว่าง จึงยัง publish ไม่ได้. ต้อง push branch, เลือก Pages source เป็น GitHub Actions และตรวจ deployment URL จริง
 - [x] ตั้งชื่อ title และ meta ให้ตรงเกม (favicon เดิม `/favicon.svg` ยังใช้งานอยู่)
 
 ## สิ่งที่ยังต้องปิดก่อนถือว่า PLAN.md เสร็จ
@@ -66,7 +66,7 @@
 1. **Campaign win:** เล่นจาก New Game จนเก็บ 5 Signal Relics, fold ไป Earth 2.0 และลงจอดปลอดภัย; บันทึกผลและข้อผิดพลาดที่พบ (full-playthrough ยังไม่ยืนยัน)
 2. **Performance:** profile session ที่เล่น/fold หลายรอบบน browser/device เป้าหมาย พร้อม FPS และ heap/GPU memory ก่อน-หลัง เพื่อยืนยัน plateau; benchmark 2 วินาทีเดิมไม่เพียงพอ
 3. **Bundle:** ตรวจทางลด `cannon` chunk โดยไม่เปลี่ยน physics behavior; ถ้าต้องเปลี่ยน physics engine ให้แยกเป็นงาน migration พร้อม regression tests
-4. **GitHub Pages:** ต้องมี remote/repository และเปิด Pages source เป็น GitHub Actions; หลัง push default branch จึงตรวจ workflow run และ URL จริงได้
+4. **GitHub Pages:** สร้าง [deotom/cosmohaven](https://github.com/deotom/cosmohaven) แล้วและ local `origin` ชี้มาที่ repo; ตอนนี้ remote ยังไม่มี source files และหน้า Pages ระบุว่ายัง disabled. หลัง push branch ให้เลือก Pages source เป็น GitHub Actions แล้วตรวจ workflow run และ URL จริง
 
 ## วิธีกลับมาทำงานต่อ (quick start)
 
