@@ -54,18 +54,17 @@
 ## Phase 4 — Polish & Release
 
 - [x] รองรับขนาดจอ/ความละเอียดต่าง ๆ, ตรวจ HUD บนจอเล็กที่ viewport 390×844
-- [~] Code-splitting / ลดขนาด bundle — แยก Scene แบบ lazy และแบ่ง vendor chunks แล้ว; ณ 2026-10-04 `cannon` ยัง 585.78 kB หลัง minify (148.94 kB gzip) และยังเตือน >500 kB. `@react-three/cannon` ส่ง dist เป็น bundled entry; ต้องประเมินการแยก physics package/engine ก่อนเปลี่ยน dependency (ยังไม่แก้ด้วยการเพิ่ม warning limit)
+- [x] Code-splitting / ประเมิน bundle — Scene โหลดแบบ lazy และ `cannon` chunk ถูกขอเมื่อเริ่มเกม ไม่ใช่หน้าเริ่มต้น; build วัดได้ 585.78 kB minified / 148.94 kB gzip (browser transfer 149,959 B). `@react-three/cannon` มี bundled `dist/index.js` เดียว จึงไม่มี safe split point ในแอป; คงสถานะนี้ไว้แทน migration physics engine ที่เสี่ยงต่อ regression. Build ยังแสดงคำเตือนเกณฑ์ 500 kB ตามจริง
 - [x] ตั้ง GitHub Actions CI สำหรับ `npm ci`, lint, test และ build
 - [x] ตั้งค่า GitHub Pages — เผยแพร่ผ่าน GitHub Actions ที่ [https://deotom.github.io/cosmohaven/](https://deotom.github.io/cosmohaven/); workflow run #1 (2026-10-04) ผ่านทั้ง verify (lint, 38 tests, build และ upload artifact) และ deploy. เปิด URL จริงและยืนยันว่าหน้าเริ่มเกมแสดงผลแล้ว
 - [x] ตั้งชื่อ title และ meta ให้ตรงเกม (favicon เดิม `/favicon.svg` ยังใช้งานอยู่)
 
 ## สิ่งที่ยังต้องปิดก่อนถือว่า PLAN.md เสร็จ
 
-รายการ feature ใน Phase 1–3, CI และ GitHub Pages deployment เสร็จแล้ว; สถานะ `[~]` ที่เหลือเป็น verification gates ไม่ใช่งานที่ติ๊กผ่านได้จากการอ่านโค้ด:
+รายการ feature ใน Phase 1–3, CI, GitHub Pages deployment และการประเมิน bundle เสร็จแล้ว; สถานะ `[~]` ที่เหลือเป็น verification gates ไม่ใช่งานที่ติ๊กผ่านได้จากการอ่านโค้ด:
 
-1. **Campaign win:** เล่นจาก New Game จนเก็บ 5 Signal Relics, fold ไป Earth 2.0 และลงจอดปลอดภัย; บันทึกผลและข้อผิดพลาดที่พบ (full-playthrough ยังไม่ยืนยัน)
-2. **Performance:** profile session ที่เล่น/fold หลายรอบบน browser/device เป้าหมาย พร้อม FPS และ heap/GPU memory ก่อน-หลัง เพื่อยืนยัน plateau; benchmark 2 วินาทีเดิมไม่เพียงพอ
-3. **Bundle:** ตรวจทางลด `cannon` chunk โดยไม่เปลี่ยน physics behavior; ถ้าต้องเปลี่ยน physics engine ให้แยกเป็นงาน migration พร้อม regression tests
+1. **Campaign win:** full-playthrough ยังไม่ยืนยัน. ทดสอบใน browser session แยกแล้ว fold จาก Home ไป sector ใหม่ 2 รอบ แต่ยัง 0/5 Relics (และไม่ได้ไป Earth 2.0/ลงจอด); จึงไม่นับเป็น campaign completion
+2. **Performance:** preliminary profile บน deployed page รวมประมาณ 3m30s และ 2 folds: `requestAnimationFrame` เฉลี่ย 74–78.4 callbacks/s, p95 frame interval 16.9 ms; JS heap ที่วัดได้แกว่งราว 24.7–45.6 MB และกลับมา 29.2 MB หลัง 2 นาที (สอดคล้องกับ GC, ยังยืนยัน plateau ระยะยาวไม่ได้). Browser นี้ไม่เปิดเผย GPU memory; ต้อง profile หลายนาที/หลาย folds บนอุปกรณ์เป้าหมาย พร้อม GPU tooling เพื่อปิด gate
 
 ## วิธีกลับมาทำงานต่อ (quick start)
 
@@ -79,3 +78,4 @@
 |---|---|---|
 | 2026-10-03 | สร้างเอกสารเริ่มต้นจากการอ่านโค้ด | เพื่อกลับมาทำต่อได้ |
 | 2026-10-04 | แยกสถานะ feature completion ออกจาก campaign/performance/deployment verification | ไม่รายงานการชนะ, memory plateau หรือ GitHub Pages deployment ว่าผ่านโดยไม่มีการทดสอบจริง |
+| 2026-10-04 | คง `@react-three/cannon` โดยไม่เปลี่ยน physics engine | chunk มีขนาด 148.94 kB gzip และโหลดเฉพาะเมื่อเริ่มเกม; dependency ส่ง bundled entry เดียว การเปลี่ยน engine เพื่อเอาคำเตือน minified-size ออกไม่คุ้มกับ regression risk โดยไม่มี profiling เป้าหมายรองรับ |
