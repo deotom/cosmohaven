@@ -189,6 +189,11 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 
 ราคา difficulty มีผลกับบล็อก, system upgrades, Space-Fold และ emergency repair; เปลี่ยนได้ระหว่างเล่นใน Pause menu.
 
+### 5.14 Autosave และ onboarding ✅
+- Autosave ช่องเดียวใน localStorage; Continue โหลดเฉพาะข้อมูล schema version 1 ที่ผ่าน validation ส่วน New Game เริ่ม campaign ใหม่และแทน save เดิมหลังลงทะเบียนลูกเรือ
+- เก็บข้อมูล campaign รวม HC/cargo, storage tech, sector/event, ship/คิวสร้าง/flight state, crew, difficulty และ progression
+- Flight briefing 4 ขั้นแสดงครั้งแรกและข้ามได้; pause simulation ระหว่างอ่าน และบันทึกการจบ/ข้ามแยกจาก campaign save
+
 ---
 
 ## 6. ปุ่มควบคุม
@@ -234,6 +239,9 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 | FR-8 | ชนะเมื่อมี 5 Relics และแตะผิว Earth 2.0 อย่างปลอดภัย | ✅ |
 | FR-9 | Autopilot หลาย tier/task และ target lock | ✅ |
 | FR-10 | อุกกาบาตเป็นภัยสุ่มและทำให้ Hull เสียหาย | ✅ |
+| FR-11 | Survey Beacon เป็น side objective ที่กู้ข้อมูลเข้า cargo แล้วขายได้ | ✅ |
+| FR-12 | Autosave/Continue ที่ตรวจ schema และมีทางเริ่ม New Game | ✅ |
+| FR-13 | Tutorial สั้นและข้ามได้ ครอบคลุมกลไกหลักก่อนเริ่มบิน | ✅ |
 
 ### 7.2 Non-functional requirements
 - **แพลตฟอร์ม:** เป้าหมายหลักคือเบราว์เซอร์เดสก์ท็อป (WebGL + pointer lock); HUD ปรับตาม viewport และตรวจที่ 390×844 แล้ว แต่ยังไม่ได้ยืนยันการควบคุมบนอุปกรณ์มือถือจริงหรือจอย

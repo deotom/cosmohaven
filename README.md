@@ -21,7 +21,7 @@ npm test
 
 ## How to play
 
-Start by creating a crew member, then build and launch from the home drydock. Collect five Signal Relics across sectors to decode Earth 2.0 and establish a colony there.
+Choose **New Game** and create a crew member, then build and launch from the home drydock. Collect five Signal Relics across sectors to decode Earth 2.0 and establish a colony there.
 
 The economy uses **Haven Credits (HC)**. Tractor-beam pickups occupy real cargo capacity and must be sold at the Trade Relay (90% rate) or a drydock (full rate). The starting hold fits 8 units; buy one of three storage technologies from the trade panel to expand or compress it. Relics occupy cargo space and cannot be sold. Some sectors also contain an optional Survey Beacon; recover its research data and sell it as valuable cargo.
 

@@ -76,7 +76,7 @@ src/
 - `Sector` เป็น data ล้วนที่สร้างจาก seed (`mulberry32` ใน `rng.ts`) → reproducible
 - ยาน **มาถึงที่ origin ของ sector เสมอ** ตำแหน่งทุกอย่างสัมพัทธ์กับจุดนี้
 - `CELESTIAL_BODIES` เป็น array กลาง ถูก **mutate in place** ตอน `enterSector()` ห้าม reassign ตัวแปร
-- Sector ปกติ: ดาว 2+ ดวง (`WELL_PER_RADIUS=3.4`, `EDGE_PULL=0.25`), drydock โอกาส 35%, relic โอกาส 60%, Survey Beacon โอกาส 45% (relic/beacon ไม่มีใน home sector)
+- Sector ปกติ: ดาว 2+ ดวง (`WELL_PER_RADIUS=3.4`, `EDGE_PULL=0.25`), drydock โอกาส 35%, relic โอกาส 60%, Survey Beacon โอกาส 45% (relic/beacon ไม่มีใน Home/Earth)
 - Earth sector (`earthSector`): Earth 2.0 ที่ `[0,0,-1700]` รัศมี 300, ชนะเมื่อเข้าใกล้ศูนย์กลาง ≤ 600 (`VICTORY_RADIUS`)
 
 ### 4.3 โหมดเกม
