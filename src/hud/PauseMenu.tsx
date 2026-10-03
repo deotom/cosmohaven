@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { DIFFICULTY_ORDER, DIFFICULTY_PROFILES, type Difficulty } from '../game/difficulty'
 import { buttonStyle } from './styles'
 import {
   CONTROL_DEFINITIONS,
@@ -10,8 +11,10 @@ import {
 
 type PauseMenuProps = {
   preferences: InputPreferences
+  difficulty: Difficulty
   settingsError: string | null
   onResume: () => void
+  onDifficultyChange: (difficulty: Difficulty) => void
   onSensitivityChange: (value: number) => void
   onAssignControl: (id: ControlId, code: string) => void
   onResetControls: () => void
@@ -19,8 +22,10 @@ type PauseMenuProps = {
 
 export function PauseMenu({
   preferences,
+  difficulty,
   settingsError,
   onResume,
+  onDifficultyChange,
   onSensitivityChange,
   onAssignControl,
   onResetControls,
@@ -70,6 +75,30 @@ export function PauseMenu({
       <div style={{ width: 'min(720px, 100%)', maxHeight: '100%', overflow: 'auto', padding: 24, background: 'rgba(8, 14, 32, 0.96)', border: '1px solid rgba(110,170,255,0.4)', borderRadius: 12 }}>
         <h1 id="pause-menu-title" style={{ marginTop: 0, letterSpacing: 4 }}>PAUSED</h1>
         <button type="button" onClick={onResume} style={{ ...buttonStyle, background: '#15243b', color: '#dbeaff' }}>RESUME</button>
+
+        <section style={{ marginTop: 18 }}>
+          <h2 style={{ fontSize: 16, color: '#7fd4ff' }}>DIFFICULTY</h2>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            {DIFFICULTY_ORDER.map((id) => {
+              const profile = DIFFICULTY_PROFILES[id]
+              return (
+              <button
+                key={id}
+                type="button"
+                aria-pressed={difficulty === id}
+                onClick={() => onDifficultyChange(id)}
+                style={{ ...buttonStyle, color: '#dbeaff', background: difficulty === id ? '#263f65' : 'transparent' }}
+              >
+                <span style={{ display: 'block' }}>{profile.label}</span>
+                <span style={{ display: 'block', fontSize: 10, fontWeight: 400 }}>
+                  Meteor {profile.meteorInterval[0]}–{profile.meteorInterval[1]}s · prices ×{profile.priceMultiplier}
+                </span>
+              </button>
+              )
+            })}
+          </div>
+          <div style={{ opacity: 0.75, marginTop: 6 }}>Meteor intervals and purchase prices change with difficulty.</div>
+        </section>
 
         <section style={{ marginTop: 18 }}>
           <h2 style={{ fontSize: 16, color: '#7fd4ff' }}>MOUSE</h2>

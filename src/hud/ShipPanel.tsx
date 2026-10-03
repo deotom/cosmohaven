@@ -1,4 +1,4 @@
-import { BLOCK_COSTS, RELICS_NEEDED, readGameStats } from '../game/gameState'
+import { getBlockCost, RELICS_NEEDED, readGameStats } from '../game/gameState'
 import { useSector } from '../game/sector'
 import type { CameraView, GameMode, PlaceableBlockType } from '../game/types'
 import { BLOCK_COLORS, BLOCK_LABELS, hudStyle } from './styles'
@@ -17,7 +17,7 @@ type ShipPanelProps = {
 export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedType, blockCount }: ShipPanelProps) {
   const game = useSampled(readGameStats)
   const sector = useSector()
-  const cost = BLOCK_COSTS[selectedType]
+  const cost = getBlockCost(selectedType)
   const notice = game.notice
 
   return (

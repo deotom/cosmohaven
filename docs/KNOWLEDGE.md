@@ -134,6 +134,7 @@ O/L orbit/land ที่ดาว · J Space-Fold · R ซ่อมฉุกเ�
 
 **Build (docked):** คลิกหน้าบล็อก=สั่งสร้าง · Shift+คลิก=รื้อ · 1/2/3 หรือ Q เลือก Hull/Food/Arcade · ลาก=หมุนกล้อง · E=undock
 **Pause/settings:** ปุ่ม PAUSE หรือ `Esc` หยุด simulation; ตั้ง mouse sensitivity และ remap ปุ่มได้จากเมนู
+**Difficulty:** `game/difficulty.ts` กำหนดช่วง spawn meteor และตัวคูณราคาบล็อก, อัปเกรด, fold และซ่อมฉุกเฉิน; ค่าเริ่มต้นคือ Standard
 
 ## 7. จุดที่ต้องระวัง / ข้อสังเกต
 

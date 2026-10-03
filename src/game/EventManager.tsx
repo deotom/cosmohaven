@@ -6,9 +6,9 @@ import { gameStats, meteorTracks, type MeteorTrack } from './gameState'
 import { targetHandlers } from './targetScreen'
 import { meteorRef } from './targets'
 import { hazardStats } from './types'
+import { DIFFICULTY_PROFILES } from './difficulty'
 
 const FIRST_METEOR_DELAY = 6 // seconds; short so the first one shows up quickly
-const METEOR_INTERVAL: [number, number] = [15, 20] // seconds between meteors
 const SPAWN_DISTANCE = 80
 const METEOR_SPEED = 18
 const METEOR_RADIUS = 1.3
@@ -34,6 +34,7 @@ function Meteor({ id, position, velocity, onExpire }: MeteorProps) {
   // mesh, which cannon updates every frame, and velocity from how far it moved since the last frame.
   // (Subscribing to the physics worker instead crashes it when a meteor's body is removed.)
   const track = useRef<MeteorTrack>({ position: [...position], velocity: [...velocity] })
+  const remainingLifetime = useRef(METEOR_LIFETIME_MS / 1000)
   useEffect(() => {
     meteorTracks.set(id, track.current)
     return () => {
@@ -42,6 +43,12 @@ function Meteor({ id, position, velocity, onExpire }: MeteorProps) {
   }, [id])
 
   useFrame((_, dt) => {
+    remainingLifetime.current -= Math.min(dt, 0.1)
+    if (remainingLifetime.current <= 0) {
+      remainingLifetime.current = Number.POSITIVE_INFINITY
+      onExpire(id)
+      return
+    }
     const mesh = ref.current
     if (!mesh || mesh.matrixAutoUpdate) return // cannon hasn't placed it yet
     const e = mesh.matrix.elements
@@ -50,12 +57,6 @@ function Meteor({ id, position, velocity, onExpire }: MeteorProps) {
     t.velocity = [(e[12] - t.position[0]) / step, (e[13] - t.position[1]) / step, (e[14] - t.position[2]) / step]
     t.position = [e[12], e[13], e[14]]
   })
-
-  // Remove the body after a while so missed meteors don't pile up
-  useEffect(() => {
-    const timeout = setTimeout(() => onExpire(id), METEOR_LIFETIME_MS)
-    return () => clearTimeout(timeout)
-  }, [id, onExpire])
 
   return (
     <mesh ref={ref} castShadow {...targetHandlers(meteorRef(id))}>
@@ -67,7 +68,7 @@ function Meteor({ id, position, velocity, onExpire }: MeteorProps) {
 
 const randomBetween = ([min, max]: [number, number]) => min + Math.random() * (max - min)
 
-/** Spawns a meteor every 15-20 seconds, aimed at wherever the ship is at that moment. */
+/** Spawns meteors at the active difficulty's interval, aimed at the ship's current position. */
 export function EventManager({ shipPosition }: { shipPosition: RefObject<THREE.Vector3> }) {
   const [meteors, setMeteors] = useState<MeteorData[]>([])
   const nextId = useRef(0)
@@ -77,7 +78,7 @@ export function EventManager({ shipPosition }: { shipPosition: RefObject<THREE.V
     if (gameStats.victory) return
     countdown.current -= Math.min(dt, 0.1)
     if (countdown.current > 0) return
-    countdown.current = randomBetween(METEOR_INTERVAL)
+    countdown.current = randomBetween(DIFFICULTY_PROFILES[gameStats.difficulty].meteorInterval)
 
     const target = shipPosition.current
     const direction = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.5) * 0.6, Math.random() - 0.5).normalize()

@@ -1,5 +1,5 @@
 import { getDock } from './dock'
-import { RELICS_NEEDED, FOLD_COST, gameStats, notify, setFold, trySpendScrap } from './gameState'
+import { RELICS_NEEDED, gameStats, getFoldCost, notify, setFold, trySpendScrap } from './gameState'
 import { earthSector, enterSector, generateSector } from './sector'
 
 /** Seconds the drive spends spinning up before the ship leaves, and the seconds the arrival flash lasts. */
@@ -15,7 +15,7 @@ export function requestFold() {
     notify('Undock before folding', 'warning')
     return
   }
-  if (!trySpendScrap(FOLD_COST)) return
+  if (!trySpendScrap(getFoldCost())) return
   setFold({ phase: 'charging', charge: 0 })
   notify('Space-Fold drive charging: hold on!', 'gain', FOLD_CHARGE_TIME * 1000)
 }

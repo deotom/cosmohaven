@@ -2,6 +2,7 @@ import { Canvas } from '@react-three/fiber'
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { CrewRegistration } from './CrewRegistration'
 import { setCrewProfile } from './game/crewProfile'
+import type { Difficulty } from './game/difficulty'
 import { useDock } from './game/dock'
 import { closeContextMenu } from './game/targetActions'
 import { ContextMenu, TargetReticle } from './game/TargetSystem'
@@ -133,6 +134,7 @@ export default function App() {
   const [selectedType, setSelectedType] = useState<PlaceableBlockType>('hull')
   const [started, setStarted] = useState(false)
   const [paused, setPaused] = useState(false)
+  const [difficulty, setDifficulty] = useState(gameStats.difficulty)
   const [initialPreferences] = useState(loadInputPreferences)
   const [inputPreferences, setInputPreferences] = useState(initialPreferences.preferences)
   const [settingsError, setSettingsError] = useState<string | null>(initialPreferences.error)
@@ -163,6 +165,10 @@ export default function App() {
   const resetControls = useCallback(() => {
     persistInputPreferences(resetKeyBindings())
   }, [persistInputPreferences])
+  const changeDifficulty = useCallback((next: Difficulty) => {
+    gameStats.difficulty = next
+    setDifficulty(next)
+  }, [])
 
   useEffect(() => {
     if (!victory) return
@@ -261,8 +267,10 @@ export default function App() {
       {paused && (
         <PauseMenu
           preferences={inputPreferences}
+          difficulty={difficulty}
           settingsError={settingsError}
           onResume={() => setPaused(false)}
+          onDifficultyChange={changeDifficulty}
           onSensitivityChange={changeMouseSensitivity}
           onAssignControl={changeControl}
           onResetControls={resetControls}

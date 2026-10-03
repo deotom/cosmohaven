@@ -24,13 +24,13 @@ import { advanceFold, requestFold } from './fold'
 import {
   addScrap,
   addThrustUsed,
-  BLOCK_COSTS,
   CELESTIAL_BODIES,
   EARTH_2,
   damageHull,
   declareVictory,
   gameStats,
   hullThrustFactor,
+  getBlockCost,
   notify,
   reportWell,
   requestArrival,
@@ -619,7 +619,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
         notify(block?.type === 'core' ? 'The core cannot be removed' : 'Removing that would split the ship', 'warning')
         return
       }
-      addScrap(Math.floor(BLOCK_COSTS[block.type as PlaceableBlockType] / 2))
+      addScrap(Math.floor(getBlockCost(block.type as PlaceableBlockType) / 2))
       setBlocks((prev) => prev.filter((b) => b !== block))
       setGhost(null)
       return
@@ -627,7 +627,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
 
     const target = neighborCell(p, e)
     if (!target || occupiedAll.has(gridKey(target))) return
-    if (!trySpendScrap(BLOCK_COSTS[selectedType])) return
+    if (!trySpendScrap(getBlockCost(selectedType))) return
     // The drones build it over time; an Engineer is quicker
     const total = BUILD_TIME[selectedType] / currentRole().buildSpeed
     setPending((prev) => [...prev, { pos: target, type: selectedType, total }])

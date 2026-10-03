@@ -1,6 +1,6 @@
 import { TASK_LABELS, setTask } from '../game/autopilot'
-import { AUTOPILOT_TIERS, HARVESTER_TIERS, upgrade } from '../game/upgrades'
-import { CELESTIAL_BODIES, FOLD_COST, readGameStats } from '../game/gameState'
+import { AUTOPILOT_TIERS, HARVESTER_TIERS, nextUpgradeCost, upgrade } from '../game/upgrades'
+import { CELESTIAL_BODIES, getFoldCost, readGameStats } from '../game/gameState'
 import { ROLES, crewProfile } from '../game/crewProfile'
 import { SPECIES } from '../game/species'
 import { Bar } from './Bar'
@@ -17,15 +17,18 @@ export function SystemsPanel() {
   const nextAutopilot = AUTOPILOT_TIERS[game.autopilotTier]
   const ap = game.autopilot
 
-  const upgradeButton = (system: 'harvester' | 'autopilot', key: string, next?: { name: string; cost: number }) => (
+  const upgradeButton = (system: 'harvester' | 'autopilot', key: string, next?: { name: string }) => {
+    const cost = nextUpgradeCost(system)
+    return (
     <div
       role="button"
       onClick={() => upgrade(system)}
-      style={{ ...upgradeButtonStyle, color: next && game.scrap < next.cost ? '#ff8a8a' : '#cfe8ff' }}
+      style={{ ...upgradeButtonStyle, color: next && cost !== undefined && game.scrap < cost ? '#ff8a8a' : '#cfe8ff' }}
     >
-      {next ? `[${key}] Upgrade → ${next.name} · ${next.cost} Scrap` : 'Max tier'}
+      {next && cost !== undefined ? `[${key}] Upgrade → ${next.name} · ${cost} Scrap` : 'Max tier'}
     </div>
-  )
+    )
+  }
 
   return (
     <div className="hud-system-panel" style={panelStyle}>
@@ -84,7 +87,7 @@ export function SystemsPanel() {
       {upgradeButton('autopilot', 'I', nextAutopilot)}
 
       <div style={{ marginTop: 10, fontWeight: 700, color: '#d6a8ff' }}>Fold Drive [J]</div>
-      <div style={{ opacity: 0.8 }}>Space-Fold to a new star system · {FOLD_COST} Scrap</div>
+      <div style={{ opacity: 0.8 }}>Space-Fold to a new star system · {getFoldCost()} Scrap</div>
       <div>
         {game.fold.phase === 'charging'
           ? `Charging ${Math.round(game.fold.charge * 100)}%`

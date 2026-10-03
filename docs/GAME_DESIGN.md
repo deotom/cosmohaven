@@ -171,6 +171,15 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 - ตั้ง mouse sensitivity ได้ และ remap ปุ่มจากเมนู pause; ป้องกันการ assign ปุ่มชนกันในโหมดเดียวกัน
 - ค่าปุ่มและ sensitivity เก็บใน localStorage แยกจาก campaign save
 
+### 5.13 Difficulty ✅
+| ระดับ | ช่วงเวลา meteor | ตัวคูณราคา |
+|---|---:|---:|
+| Relaxed | 30–40 วินาที | 0.8× |
+| Standard | 15–20 วินาที | 1× |
+| Challenging | 8–12 วินาที | 1.25× |
+
+ราคา difficulty มีผลกับบล็อก, system upgrades, Space-Fold และ emergency repair; เปลี่ยนได้ระหว่างเล่นใน Pause menu.
+
 ---
 
 ## 6. ปุ่มควบคุม

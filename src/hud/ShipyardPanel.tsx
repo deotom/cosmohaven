@@ -1,5 +1,5 @@
 import { useDock } from '../game/dock'
-import { BLOCK_COSTS, readGameStats } from '../game/gameState'
+import { getBlockCost, readGameStats } from '../game/gameState'
 import { getSector } from '../game/sector'
 import type { PlaceableBlockType } from '../game/types'
 import { Bar } from './Bar'
@@ -37,7 +37,7 @@ export function ShipyardPanel({ selectedType, onSelect }: { selectedType: Placea
             <span>
               [{i + 1}] {BLOCK_LABELS[type]}
             </span>
-            <span style={{ color: game.scrap < BLOCK_COSTS[type] ? '#ff5d5d' : '#ffd633' }}>{BLOCK_COSTS[type]}</span>
+            <span style={{ color: game.scrap < getBlockCost(type) ? '#ff5d5d' : '#ffd633' }}>{getBlockCost(type)}</span>
           </div>
         ))}
       </div>

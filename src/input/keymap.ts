@@ -1,7 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { nextTask, nextWaypoint, toggleAutopilot } from '../game/autopilot'
 import { requestDockToggle } from '../game/dock'
-import { FOLD_COST, REPAIR_COST, emergencyRepair, gameStats, notify, requestArrival } from '../game/gameState'
+import { emergencyRepair, gameStats, getFoldCost, getRepairCost, notify, requestArrival } from '../game/gameState'
 import { requestFold } from '../game/fold'
 import { upgrade } from '../game/upgrades'
 import { actionsFor, closeContextMenu, runAction } from '../game/targetActions'
@@ -62,8 +62,8 @@ export const KEY_BINDINGS: readonly Binding[] = [
   { code: 'KeyL', key: 'L', mode: 'pilot', action: 'arrivalLand', hint: 'Initiate landing', control: 'arrivalLand' },
   { code: 'Escape', key: 'Esc', mode: 'pilot', action: 'closeMenu' },
   { code: 'Digit1-4', key: '1–4', mode: 'pilot', action: 'targetAction', hint: 'Run locked-target action' },
-  { code: 'KeyJ', key: 'J', mode: 'pilot', action: 'fold', hint: `Space-Fold (${FOLD_COST} Scrap)`, unavailableAfterVictory: true, control: 'fold' },
-  { code: 'KeyR', key: 'R', mode: 'pilot', action: 'repair', hint: `Emergency repair (${REPAIR_COST} Scrap)`, unavailableAfterVictory: true, control: 'repair' },
+  { code: 'KeyJ', key: 'J', mode: 'pilot', action: 'fold', hint: 'Space-Fold', unavailableAfterVictory: true, control: 'fold' },
+  { code: 'KeyR', key: 'R', mode: 'pilot', action: 'repair', hint: 'Emergency repair', unavailableAfterVictory: true, control: 'repair' },
   { code: 'Digit1', key: '1', mode: 'build', action: 'selectHull', hint: 'Select Hull', control: 'selectHull' },
   { code: 'Digit2', key: '2', mode: 'build', action: 'selectFood', hint: 'Select Food Dispenser', control: 'selectFood' },
   { code: 'Digit3', key: '3', mode: 'build', action: 'selectArcade', hint: 'Select Arcade', control: 'selectArcade' },
@@ -91,7 +91,15 @@ const bindingLabel = (binding: Binding) => (binding.control ? controlLabel(bindi
 
 export const controlHints = (mode: GameMode) =>
   KEY_BINDINGS.filter((binding) => (binding.mode === 'all' || binding.mode === mode) && binding.hint).map(
-    (binding) => `${binding.shift ? `Shift+${bindingLabel(binding)}` : bindingLabel(binding)} — ${binding.hint}`,
+    (binding) => {
+      const hint =
+        binding.control === 'fold'
+          ? `Space-Fold (${getFoldCost()} Scrap)`
+          : binding.control === 'repair'
+            ? `Emergency repair (${getRepairCost()} Scrap)`
+            : binding.hint
+      return `${binding.shift ? `Shift+${bindingLabel(binding)}` : bindingLabel(binding)} — ${hint}`
+    },
   )
 
 type KeymapContext = {

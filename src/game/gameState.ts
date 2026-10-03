@@ -1,4 +1,5 @@
 import type { PlaceableBlockType } from './types'
+import { adjustedCost, type Difficulty } from './difficulty'
 
 export const BLOCK_COSTS: Record<PlaceableBlockType, number> = { hull: 10, food: 30, arcade: 30 }
 export const STARTING_SCRAP = 100
@@ -80,6 +81,7 @@ export type Notice = { text: string; kind: 'warning' | 'gain'; until: number }
  */
 export const gameStats = {
   scrap: STARTING_SCRAP,
+  difficulty: 'standard' as Difficulty,
   /** Distance remaining until the ship is inside the victory radius */
   distanceToEarth: Infinity,
   victory: false,
@@ -169,11 +171,16 @@ export function emergencyRepair() {
     notify('Repair drones are recharging', 'warning')
     return
   }
-  if (!trySpendScrap(REPAIR_COST)) return
+  const cost = adjustedCost(REPAIR_COST, gameStats.difficulty)
+  if (!trySpendScrap(cost)) return
   repairReadyAt = performance.now() + 4000
   repairHull(REPAIR_AMOUNT)
-  notify(`Emergency repair: hull ${Math.round(gameStats.hull)}%`, 'gain', 2000)
+  notify(`Emergency repair: hull ${Math.round(gameStats.hull)}% · ${cost} Scrap`, 'gain', 2000)
 }
+
+export const getBlockCost = (type: PlaceableBlockType) => adjustedCost(BLOCK_COSTS[type], gameStats.difficulty)
+export const getFoldCost = () => adjustedCost(FOLD_COST, gameStats.difficulty)
+export const getRepairCost = () => adjustedCost(REPAIR_COST, gameStats.difficulty)
 
 export function addScrap(amount: number) {
   gameStats.scrap += amount

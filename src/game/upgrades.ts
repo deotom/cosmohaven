@@ -1,4 +1,5 @@
 import { gameStats, notify, trySpendScrap } from './gameState'
+import { adjustedCost } from './difficulty'
 
 export type HarvesterTier = {
   name: string
@@ -30,6 +31,12 @@ export const AUTOPILOT_TIERS: readonly AutopilotTier[] = [
 
 export const currentHarvester = () => HARVESTER_TIERS[gameStats.harvesterTier - 1]
 export const currentAutopilot = () => AUTOPILOT_TIERS[gameStats.autopilotTier - 1]
+export const nextUpgradeCost = (system: 'harvester' | 'autopilot') => {
+  const tiers = system === 'harvester' ? HARVESTER_TIERS : AUTOPILOT_TIERS
+  const current = system === 'harvester' ? gameStats.harvesterTier : gameStats.autopilotTier
+  const next = tiers[current]
+  return next ? adjustedCost(next.cost, gameStats.difficulty) : undefined
+}
 
 /** Buys the next tier of a system if there is one and the player can afford it. */
 export function upgrade(system: 'harvester' | 'autopilot') {
@@ -41,7 +48,8 @@ export function upgrade(system: 'harvester' | 'autopilot') {
     notify(`${label} is already at maximum tier`, 'gain')
     return
   }
-  if (!trySpendScrap(next.cost)) return
+  const cost = adjustedCost(next.cost, gameStats.difficulty)
+  if (!trySpendScrap(cost)) return
   if (system === 'harvester') gameStats.harvesterTier = current + 1
   else gameStats.autopilotTier = current + 1
   notify(`${label} upgraded: ${next.name}`, 'gain', 2500)
