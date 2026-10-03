@@ -134,6 +134,7 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 - Tractor beam (`F`) ดึง Scrap ลอยในอวกาศ; 3 tier: T-Beam (ระยะ 10), Magnetic Scoop (22, ดูดอัตโนมัติ, 80 Scrap), Quantum Harvester (55, 200 Scrap)
 - วัตถุดิบที่เก็บกินพื้นที่จริงใน cargo hold; ความจุเริ่มต้น 8 units และห้ามเก็บเมื่อเต็ม
 - เปิด Trade Relay ได้ทุก sector (ขาย 18 HC ต่อ Scrap) หรือขายที่ drydock ในราคาเต็ม (20 HC); Scrap ต้องขายก่อนจึงใช้จ่ายได้
+- Survey Beacon อาจเกิดใน sector ที่สร้างแบบ procedural; ใช้ tractor beam กู้ Survey Data ซึ่งกิน 1 cargo unit แล้วขายได้ 45 HC ที่ Trade Relay หรือ 50 HC ที่ drydock
 - เริ่มเกมด้วย 100 **Haven Credits (HC)**; Relics ใช้พื้นที่ 1 unit และขายไม่ได้
 - อัปเกรด Harvester (`U`: Magnetic Scoop 80 HC, Quantum Harvester 200 HC) และ Auto-Pilot (`I`: Advanced 120 HC, Expert 250 HC)
 - Cargo technologies ซื้อด้วย HC: Expanded Bay (14 units, 120), Mass Compressor (8 units, cargo ใช้ 55% volume, 240), Quantum Vault (12 units, cargo ใช้ 30% volume, 450); เปลี่ยนระหว่างที่ซื้อไว้แล้วได้ฟรี
@@ -149,15 +150,16 @@ orbit/landing → target lock → เผ่าพันธุ์ลูกเร�
 คือ **ORBIT, LAND, DOCK**
 
 ### 5.7 Target lock และเมนูบริบท ✅
-- คลิกที่วัตถุ (ดาว, สถานี, Scrap, Relic, อุกกาบาต) หรือ `T` เพื่อวนเป้าหมาย
+- คลิกที่วัตถุ (ดาว, สถานี, Scrap, Relic, Survey Beacon, อุกกาบาต) หรือ `T` เพื่อวนเป้าหมาย
 - กรอบล็อกบนหน้าจอพร้อม telemetry; เมนูบริบทสั่ง action ด้วยเมาส์หรือเลข `1–4`
 - ⚠️ ขณะอยู่ pointer lock (chase view) คลิกวัตถุไม่ได้ ใช้ `T`/เลข หรือกด `Esc` ก่อน
 
 ### 5.8 Space-Fold และโลกเปิดแบบ procedural ✅
 - `J` กระโดดไปยัง sector ใหม่ (40 HC) ผ่านขั้นชาร์จ → แฟลช → มาถึง
-- Sector สร้างจาก seed (mulberry32): ดาวเคราะห์, ดวงดาว, Scrap, Relic — seed เดิมได้ผลเดิม
+- Sector สร้างจาก seed (mulberry32): ดาวเคราะห์, ดวงดาว, Scrap, Relic, Survey Beacon — seed เดิมได้ผลเดิม
 - Sector พิเศษ: **Home** (Kepler-9 + Haven Drydock) และ **Earth** (ปลดล็อกเมื่อมี 5 Relics)
 - Signal Relic: ชิ้นเดียวต่อ sector ที่ fold ไปเจอ มีตัวชี้ระยะ
+- Survey Beacon: โอกาสเกิด 45% ใน sector ทั่วไป; beam กู้ข้อมูลซึ่งมีมูลค่าขายสูงกว่า Scrap
 
 ### 5.9 สถานีอวกาศและการ dock ✅
 - Haven Drydock: เส้นทางเข้าโดยโค้ง Bezier เข้าโรงเก็บ (hangar เปิดด้าน +Z)

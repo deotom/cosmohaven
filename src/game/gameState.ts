@@ -11,10 +11,11 @@ export const BLOCK_COSTS: Record<PlaceableBlockType, number> = {
 }
 export const STARTING_CREDITS = 100
 export const SCRAP_SELL_VALUE = 20
+export const SURVEY_DATA_SELL_VALUE = 50
 export const BASE_CARGO_CAPACITY = 8
 
-export type CargoKind = 'scrap' | 'relics'
-const CARGO_ITEM_VOLUME: Record<CargoKind, number> = { scrap: 1, relics: 1 }
+export type CargoKind = 'scrap' | 'relics' | 'surveyData'
+const CARGO_ITEM_VOLUME: Record<CargoKind, number> = { scrap: 1, relics: 1, surveyData: 1 }
 export type StorageTechId = 'expanded-bay' | 'mass-compressor' | 'quantum-vault'
 export const STORAGE_TECHS: Record<StorageTechId, { name: string; description: string; capacity: number; volumeFactor: number; cost: number }> = {
   'expanded-bay': { name: 'Expanded Bay', description: '+6 cargo units', capacity: 14, volumeFactor: 1, cost: 120 },
@@ -72,7 +73,7 @@ export type AutopilotTask = 'nav' | 'harvest' | 'hold' | 'evac' | 'orbit' | 'lan
 export type ArrivalPhase = 'none' | 'choice' | 'insertion' | 'orbiting' | 'deorbit' | 'descent' | 'landed'
 export type ArrivalIntent = 'choose' | 'orbit' | 'land'
 
-export type TargetKind = 'planet' | 'station' | 'scrap' | 'relic' | 'meteor'
+export type TargetKind = 'planet' | 'station' | 'scrap' | 'relic' | 'survey' | 'meteor'
 /** A reference to something in the world that can be locked on. `key` is unique within the sector. */
 export type TargetRef = { kind: TargetKind; key: string; name: string }
 
@@ -98,7 +99,7 @@ export type Notice = { text: string; kind: 'warning' | 'gain'; until: number }
  */
 export const gameStats = {
   credits: STARTING_CREDITS,
-  cargo: { scrap: 0, relics: 0 },
+  cargo: { scrap: 0, relics: 0, surveyData: 0 },
   storageTech: null as StorageTechId | null,
   ownedStorageTechs: [] as StorageTechId[],
   difficulty: 'standard' as Difficulty,
@@ -118,6 +119,7 @@ export const gameStats = {
   /** Signal Relics recovered so far, and the distance to the one in this sector, if any */
   relics: 0,
   relicDistance: null as number | null,
+  sideEvent: { id: null as string | null, name: '', status: 'none' as 'none' | 'available' | 'complete', dataValue: 0 },
   /** Space-Fold drive: idle, charging up (charge 0-1) or arriving (the flash fading, charge 0-1) */
   fold: { phase: 'idle' as 'idle' | 'charging' | 'arriving', charge: 0 },
   harvesterTier: 1,
@@ -231,6 +233,14 @@ export function collectRelic() {
   return tryAddCargo('relics')
 }
 
+export function completeSurveyEvent(id: string) {
+  if (gameStats.sideEvent.id !== id || gameStats.sideEvent.status !== 'available') return false
+  if (!tryAddCargo('surveyData')) return false
+  gameStats.sideEvent.status = 'complete'
+  notify('Survey Beacon recovered · research data stored in cargo', 'gain', 3500)
+  return true
+}
+
 export function getCargoCapacity() {
   return gameStats.storageTech ? STORAGE_TECHS[gameStats.storageTech].capacity : BASE_CARGO_CAPACITY
 }
@@ -239,7 +249,8 @@ export function getCargoVolume() {
   const tech = gameStats.storageTech ? STORAGE_TECHS[gameStats.storageTech] : null
   return (
     gameStats.cargo.scrap * CARGO_ITEM_VOLUME.scrap +
-    gameStats.cargo.relics * CARGO_ITEM_VOLUME.relics
+    gameStats.cargo.relics * CARGO_ITEM_VOLUME.relics +
+    gameStats.cargo.surveyData * CARGO_ITEM_VOLUME.surveyData
   ) * (tech?.volumeFactor ?? 1)
 }
 
@@ -271,7 +282,7 @@ export function trySpendCredits(cost: number): boolean {
 export const getStorageTechCost = (id: StorageTechId) => adjustedCost(STORAGE_TECHS[id].cost, gameStats.difficulty)
 
 export function getCargoSaleValue(atDrydock: boolean) {
-  const rawValue = gameStats.cargo.scrap * SCRAP_SELL_VALUE
+  const rawValue = gameStats.cargo.scrap * SCRAP_SELL_VALUE + gameStats.cargo.surveyData * SURVEY_DATA_SELL_VALUE
   return Math.floor(rawValue * (atDrydock ? 1 : 0.9))
 }
 
@@ -282,9 +293,11 @@ export function sellCargo(atDrydock: boolean) {
     return 0
   }
   const soldScrap = gameStats.cargo.scrap
+  const soldData = gameStats.cargo.surveyData
   gameStats.cargo.scrap = 0
+  gameStats.cargo.surveyData = 0
   gameStats.credits += payout
-  notify(`Cargo sold: ${soldScrap} Scrap → ${payout} HC${atDrydock ? '' : ' (Relay rate)'}`, 'gain', 3500)
+  notify(`Cargo sold: ${soldScrap} Scrap · ${soldData} Data → ${payout} HC${atDrydock ? '' : ' (Relay rate)'}`, 'gain', 3500)
   return payout
 }
 
@@ -334,6 +347,7 @@ export function readGameStats() {
     ...gameStats,
     notice,
     cargo: { ...gameStats.cargo },
+    sideEvent: { ...gameStats.sideEvent },
     ownedStorageTechs: [...gameStats.ownedStorageTechs],
     harvest: { ...gameStats.harvest },
     construction: gameStats.construction.map((c) => ({ ...c })),

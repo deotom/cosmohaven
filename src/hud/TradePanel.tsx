@@ -45,10 +45,10 @@ export function TradePanel({ onClose }: { onClose: () => void }) {
       </div>
       <div style={{ marginTop: 8 }}>Wallet: {game.credits} HC</div>
       <div>
-        Cargo hold: {getCargoVolume().toFixed(1)} / {getCargoCapacity()} units · {game.cargo.scrap} Scrap · {game.cargo.relics} Relics
+        Cargo hold: {getCargoVolume().toFixed(1)} / {getCargoCapacity()} units · {game.cargo.scrap} Scrap · {game.cargo.relics} Relics · {game.cargo.surveyData} Survey Data
       </div>
       <div style={{ marginTop: 6, opacity: 0.8 }}>
-        Scrap: {atDrydock ? 20 : 18} HC/unit
+        Scrap: {atDrydock ? 20 : 18} HC/unit · Survey Data: {atDrydock ? 50 : 45} HC/unit
       </div>
       <div
         role="button"
@@ -66,7 +66,7 @@ export function TradePanel({ onClose }: { onClose: () => void }) {
           textAlign: 'center',
         }}
       >
-        SELL SCRAP · {payout} HC
+        SELL CARGO · {payout} HC
       </div>
       <div style={{ marginTop: 14, fontWeight: 700, color: '#8bdcff' }}>Cargo Technologies</div>
       <div style={{ fontSize: 11, opacity: 0.75 }}>Owned technologies can be switched freely; buying a new one replaces the active system.</div>

@@ -6,6 +6,7 @@ import { buildNavGrid, findNearestPath, findPath, reachableCells } from './Pathf
 import { createGravitySample, sampleGravity } from './gravity'
 import {
   CELESTIAL_BODIES,
+  completeSurveyEvent,
   gameStats,
   getCargoCapacity,
   getCargoVolume,
@@ -17,7 +18,7 @@ import {
   trySpendCredits,
   type CelestialBody,
 } from './gameState'
-import { generateSector } from './sector'
+import { earthSector, enterSector, generateSector, homeSector } from './sector'
 import { mulberry32 } from './rng'
 import { upgrade } from './upgrades'
 import type { Block } from './types'
@@ -36,10 +37,11 @@ beforeEach(() => {
   CELESTIAL_BODIES.length = 0
   meteorTracks.clear()
   gameStats.credits = 100
-  gameStats.cargo = { scrap: 0, relics: 0 }
+  gameStats.cargo = { scrap: 0, relics: 0, surveyData: 0 }
   gameStats.storageTech = null
   gameStats.ownedStorageTechs = []
   gameStats.relics = 0
+  gameStats.sideEvent = { id: null, name: '', status: 'none', dataValue: 0 }
   gameStats.hull = 100
   gameStats.harvesterTier = 1
   gameStats.autopilotTier = 1
@@ -67,6 +69,13 @@ describe('seeded generation', () => {
   it('generates an identical sector from the same seed and id', () => {
     expect(generateSector(9876, 4)).toEqual(generateSector(9876, 4))
     expect(generateSector(9876, 4)).not.toEqual(generateSector(9877, 4))
+  })
+
+  it('places optional survey beacons reproducibly and excludes special sectors', () => {
+    const sector = Array.from({ length: 100 }, (_, index) => generateSector(index + 1, index + 1)).find((item) => item.surveyBeacon)
+    expect(sector?.surveyBeacon).toMatchObject({ id: `survey-${sector?.id}`, name: 'Survey Beacon' })
+    expect(homeSector().surveyBeacon).toBeNull()
+    expect(earthSector(1, 99).surveyBeacon).toBeNull()
   })
 })
 
@@ -180,12 +189,38 @@ describe('game state and upgrades', () => {
   })
 
   it('sells cargo for less at a Trade Relay while retaining quest relics', () => {
-    gameStats.cargo = { scrap: 2, relics: 1 }
+    gameStats.cargo = { scrap: 2, relics: 1, surveyData: 0 }
     gameStats.relics = 1
     expect(sellCargo(false)).toBe(36)
     expect(gameStats.credits).toBe(136)
-    expect(gameStats.cargo).toEqual({ scrap: 0, relics: 1 })
+    expect(gameStats.cargo).toEqual({ scrap: 0, relics: 1, surveyData: 0 })
     expect(getCargoVolume()).toBe(1)
+  })
+
+  it('recovers a survey beacon once and sells its data cargo', () => {
+    const sector = Array.from({ length: 100 }, (_, index) => generateSector(index + 1, index + 1)).find((item) => item.surveyBeacon)
+    if (!sector?.surveyBeacon) throw new Error('Expected a generated survey beacon')
+    enterSector(sector)
+    try {
+      expect(gameStats.sideEvent).toEqual({
+        id: sector.surveyBeacon.id,
+        name: 'Survey Beacon',
+        status: 'available',
+        dataValue: 50,
+      })
+      gameStats.cargo.scrap = getCargoCapacity()
+      expect(completeSurveyEvent(sector.surveyBeacon.id)).toBe(false)
+      expect(gameStats.sideEvent.status).toBe('available')
+      gameStats.cargo.scrap = 0
+      expect(completeSurveyEvent(sector.surveyBeacon.id)).toBe(true)
+      expect(completeSurveyEvent(sector.surveyBeacon.id)).toBe(false)
+      expect(gameStats.cargo.surveyData).toBe(1)
+      expect(gameStats.sideEvent.status).toBe('complete')
+      expect(sellCargo(false)).toBe(45)
+      expect(gameStats.cargo.surveyData).toBe(0)
+    } finally {
+      enterSector(homeSector())
+    }
   })
 
   it('pays full value at a drydock', () => {

@@ -26,9 +26,16 @@ export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedTyp
       <div>Blocks: {blockCount} · Mass: {blockCount} t</div>
       <div style={{ color: '#ffd633' }}>Credits: {game.credits} HC</div>
       <div style={{ color: getCargoVolume() >= getCargoCapacity() ? '#ff8a8a' : '#9fd4ff' }}>
-        Cargo: {game.cargo.scrap} Scrap · {game.cargo.relics} Relics ({getCargoVolume().toFixed(1)}/{getCargoCapacity()} units)
+        Cargo: {game.cargo.scrap} Scrap · {game.cargo.relics} Relics · {game.cargo.surveyData} Data ({getCargoVolume().toFixed(1)}/{getCargoCapacity()} units)
       </div>
       <div style={{ color: '#d6a8ff' }}>Sector: {sector.name}</div>
+      {game.sideEvent.status !== 'none' && (
+        <div style={{ color: game.sideEvent.status === 'complete' ? '#4dffb8' : '#c88bff' }}>
+          {game.sideEvent.status === 'complete'
+            ? `${game.sideEvent.name} recovered · data in cargo`
+            : `Optional: recover ${game.sideEvent.name} · survey data sells for ${game.sideEvent.dataValue} HC at a drydock`}
+        </div>
+      )}
       <div style={{ color: '#5ff0ff' }}>
         Signal Relics: {game.relics}/{RELICS_NEEDED}
         {game.relicDistance !== null && ` · beacon ${Math.round(game.relicDistance).toLocaleString()} u`}

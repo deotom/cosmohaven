@@ -3,8 +3,8 @@ import { canAddCargo, CELESTIAL_BODIES, meteorTracks, type TargetKind, type Targ
 import { getSector } from './sector'
 import { stationPose } from './station'
 
-/** Live positions of the sector's scrap and relic, kept by the ScrapField so the auto-pilot and targeting can see them. */
-export const scrapRegistry = new Map<number, { position: THREE.Vector3; relic: boolean }>()
+/** Live positions of harvestable cargo, kept by the ScrapField for the auto-pilot and targeting systems. */
+export const scrapRegistry = new Map<number, { position: THREE.Vector3; kind: 'scrap' | 'relic' | 'survey'; surveyId?: string }>()
 
 /** What a target is right now, in world space. */
 export type TargetState = {
@@ -20,10 +20,10 @@ export const createTargetState = (): TargetState => ({
   radius: 1,
 })
 
-export const scrapRef = (id: number, relic: boolean): TargetRef => ({
-  kind: relic ? 'relic' : 'scrap',
+export const scrapRef = (id: number, kind: 'scrap' | 'relic' | 'survey'): TargetRef => ({
+  kind,
   key: `scrap:${id}`,
-  name: relic ? 'Signal Relic' : 'Scrap',
+  name: kind === 'relic' ? 'Signal Relic' : kind === 'survey' ? 'Survey Beacon' : 'Scrap',
 })
 export const meteorRef = (id: number): TargetRef => ({ kind: 'meteor', key: `meteor:${id}`, name: `Meteor ${id}` })
 export const planetRef = (name: string): TargetRef => ({ kind: 'planet', key: `planet:${name}`, name })
@@ -54,7 +54,14 @@ export function resolveTarget(ref: TargetRef, out: TargetState): boolean {
       const pickup = scrapRegistry.get(idOf(ref))
       if (!pickup) return false
       out.position.copy(pickup.position)
-      out.radius = pickup.relic ? 1.4 : 0.8
+      out.radius = pickup.kind === 'relic' ? 1.4 : pickup.kind === 'survey' ? 2 : 0.8
+      return true
+    }
+    case 'survey': {
+      const pickup = scrapRegistry.get(idOf(ref))
+      if (!pickup || pickup.kind !== 'survey') return false
+      out.position.copy(pickup.position)
+      out.radius = 2
       return true
     }
     case 'meteor': {
@@ -89,8 +96,8 @@ export function listTargets(from: THREE.Vector3, range = 1500): TargetRef[] {
   for (const body of CELESTIAL_BODIES) add(planetRef(body.name), 1e9)
   for (const station of getSector().stations) add(stationRef(station.name), 1e9)
   for (const [id, pickup] of scrapRegistry) {
-    const cargoKind = pickup.relic ? 'relics' : 'scrap'
-    if (canAddCargo(cargoKind)) add(scrapRef(id, pickup.relic), pickup.relic ? 1e9 : SCRAP_LIST_RANGE)
+    const cargoKind = pickup.kind === 'relic' ? 'relics' : 'scrap'
+    if (canAddCargo(cargoKind)) add(scrapRef(id, pickup.kind), pickup.kind === 'relic' ? 1e9 : SCRAP_LIST_RANGE)
   }
   for (const id of meteorTracks.keys()) add(meteorRef(id), range)
   return found.sort((a, b) => a.distance - b.distance).map((f) => f.ref)
@@ -101,5 +108,6 @@ export const kindLabel: Record<TargetKind, string> = {
   station: 'SPACE STATION',
   scrap: 'SCRAP',
   relic: 'SIGNAL RELIC',
+  survey: 'SURVEY BEACON',
   meteor: 'METEOR',
 }

@@ -418,8 +418,8 @@ function nearestScrap(from: THREE.Vector3, includeRelics: boolean, range: number
   let best: number | null = null
   let bestDistance = range
   for (const [id, pickup] of scrapRegistry) {
-    if (pickup.relic && !includeRelics) continue
-    if (!canAddCargo(pickup.relic ? 'relics' : 'scrap')) continue
+    if (pickup.kind === 'relic' && !includeRelics) continue
+    if (!canAddCargo(pickup.kind === 'relic' ? 'relics' : 'scrap')) continue
     const distance = pickup.position.distanceTo(from)
     if (distance < bestDistance) {
       best = id
@@ -436,7 +436,7 @@ function harvestTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutp
   // Keep the current piece until it is collected; then take the nearest, or stop if this was a single pick
   let id = ap.harvestId
   const currentPickup = id === null ? undefined : scrapRegistry.get(id)
-  if (id !== null && (!currentPickup || !canAddCargo(currentPickup.relic ? 'relics' : 'scrap'))) {
+  if (id !== null && (!currentPickup || !canAddCargo(currentPickup.kind === 'relic' ? 'relics' : 'scrap'))) {
     id = null
     if (!ap.sweep) {
       setAutopilot({ engaged: false, status: 'Off', harvestId: null })
@@ -468,8 +468,8 @@ function harvestTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutp
   out.status = dodging
     ? 'Evading meteor'
     : remaining < 6
-      ? `Harvesting ${pickup.relic ? 'relic' : 'scrap'} (${out.distance.toFixed(0)} u)`
-      : `Targeting ${pickup.relic ? 'relic' : 'scrap'} (${out.distance.toFixed(0)} u away)`
+      ? `Harvesting ${pickup.kind === 'relic' ? 'relic' : pickup.kind === 'survey' ? 'survey data' : 'scrap'} (${out.distance.toFixed(0)} u)`
+      : `Targeting ${pickup.kind === 'relic' ? 'relic' : pickup.kind === 'survey' ? 'survey data' : 'scrap'} (${out.distance.toFixed(0)} u away)`
   return out
 }
 

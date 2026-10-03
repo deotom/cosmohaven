@@ -49,7 +49,7 @@ src/
     Ship.tsx / ShipBlocks.tsx / shipState.ts   ยาน, บล็อก, state ของยาน
     SpaceStation.tsx / station.ts / dock.ts / docking.ts   สถานี, ลำดับ dock/undock
     Character.tsx / Crew.tsx / crewProfile.ts / species.ts   ลูกเรือ + เผ่าพันธุ์
-    ScrapField.tsx      scrap/relic + beam เก็บเข้าคลังสินค้า
+    ScrapField.tsx      scrap/relic/Survey Beacon + beam เก็บเข้าคลังสินค้า
   hud/TradePanel.tsx    Trade Relay/drydock sale UI และ storage technologies
     targets.ts / targetActions.ts / targetScreen.ts / TargetSystem.tsx   ระบบ lock เป้าหมาย + context menu
     EventManager.tsx    spawn อุกกาบาต (physics body)
@@ -72,7 +72,7 @@ src/
 - `Sector` เป็น data ล้วนที่สร้างจาก seed (`mulberry32` ใน `rng.ts`) → reproducible
 - ยาน **มาถึงที่ origin ของ sector เสมอ** ตำแหน่งทุกอย่างสัมพัทธ์กับจุดนี้
 - `CELESTIAL_BODIES` เป็น array กลาง ถูก **mutate in place** ตอน `enterSector()` ห้าม reassign ตัวแปร
-- Sector ปกติ: ดาว 2+ ดวง (`WELL_PER_RADIUS=3.4`, `EDGE_PULL=0.25`), drydock โอกาส 35%, relic โอกาส 60% (ไม่มีใน home sector)
+- Sector ปกติ: ดาว 2+ ดวง (`WELL_PER_RADIUS=3.4`, `EDGE_PULL=0.25`), drydock โอกาส 35%, relic โอกาส 60%, Survey Beacon โอกาส 45% (relic/beacon ไม่มีใน home sector)
 - Earth sector (`earthSector`): Earth 2.0 ที่ `[0,0,-1700]` รัศมี 300, ชนะเมื่อเข้าใกล้ศูนย์กลาง ≤ 600 (`VICTORY_RADIUS`)
 
 ### 4.3 โหมดเกม
@@ -109,6 +109,7 @@ Task: `nav | harvest | hold | evac | orbit | land | dock` — `Shift+P` วน�
 | เงินเริ่มต้น | 100 Haven Credits (HC) | `gameState.ts` |
 | ราคาบล็อก (ก่อน difficulty multiplier) | hull 10, food 30, arcade 30, engine 60, shield 80, repair 70 HC | `gameState.ts` |
 | Scrap ดิบ | 1 cargo unit; ขาย 18 HC ที่ Trade Relay / 20 HC ที่ drydock | `gameState.ts` |
+| Survey Data | 1 cargo unit; ขาย 45 HC ที่ Trade Relay / 50 HC ที่ drydock | `gameState.ts`, `sector.ts` |
 | ความจุ cargo เริ่มต้น | 8 units; Relic ใช้พื้นที่ 1 unit และขายไม่ได้ | `gameState.ts` |
 | Fold cost / charge / arrive | 40 HC / 3s / 1.6s | `gameState.ts`, `fold.ts` |
 | Relic ที่ต้องมี | 5 (หนึ่งชิ้นต่อ sector ที่ fold ไป) | `gameState.ts` |
@@ -121,6 +122,7 @@ Task: `nav | harvest | hold | evac | orbit | land | dock` — `Shift+P` วน�
 - Wallet เริ่มต้น 100 HC; Scrap ที่เก็บด้วย beam เป็นวัตถุดิบใน hold ไม่ใช่เงินทันที และต้องขายก่อนจึงใช้จ่ายได้
 - Trade Relay เปิดได้จาก HUD ทุก sector: Scrap ดิบ 18 HC/ชิ้น; drydock จ่ายเต็ม 20 HC/ชิ้น
 - Relic ใช้ 1 unit และขายไม่ได้
+- Survey Beacon เป็น optional side objective ใน procedural sector; กู้ Survey Data ได้ครั้งเดียวต่อ event
 - Hold เริ่ม 8 units; Expanded Bay (14 units, 120 HC), Mass Compressor (8 units, 55% volume, 240 HC), Quantum Vault (12 units, 30% volume, 450 HC)
 - ซื้อ storage tech ด้วย HC; เทคที่ซื้อแล้วสลับใช้งานได้ฟรี และราคาใหม่ได้รับ difficulty multiplier
 
@@ -150,7 +152,7 @@ O/L orbit/land ที่ดาว · J Space-Fold · R ซ่อมฉุกเ�
 
 **Build (docked):** คลิกหน้าบล็อก=สั่งสร้าง · Shift+คลิก=รื้อ · 1–6 หรือ Q เลือกบล็อก · ลาก=หมุนกล้อง · E=undock
 **Pause/settings:** ปุ่ม PAUSE หรือ `Esc` หยุด simulation; ตั้ง mouse sensitivity และ remap ปุ่มได้จากเมนู
-**Trade:** ปุ่ม TRADE RELAY เปิดตลาดทุก sector; ขาย Scrap เพื่อรับ HC และเลือก storage technology
+**Trade:** ปุ่ม TRADE RELAY เปิดตลาดทุก sector; ขาย Scrap/Survey Data เพื่อรับ HC และเลือก storage technology
 **Difficulty:** `game/difficulty.ts` กำหนดช่วง spawn meteor และตัวคูณราคา HC ของบล็อก, อัปเกรด, fold, ซ่อมฉุกเฉิน และ storage tech; ค่าเริ่มต้นคือ Standard
 
 ## 7. จุดที่ต้องระวัง / ข้อสังเกต

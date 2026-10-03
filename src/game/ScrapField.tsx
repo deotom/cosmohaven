@@ -4,6 +4,7 @@ import * as THREE from 'three'
 import {
   canAddCargo,
   RELICS_NEEDED,
+  completeSurveyEvent,
   collectRelic,
   gameStats,
   notify,
@@ -25,17 +26,25 @@ const RELEASE_RATE = 1.5
 /** A relic takes this many times longer to reel in than a piece of scrap */
 const RELIC_REEL_FACTOR = 3
 const RELIC_COLOR = '#5ff0ff'
+const SURVEY_COLOR = '#c88bff'
 const UP = new THREE.Vector3(0, 1, 0)
 
-type Pickup = { id: number; position: THREE.Vector3; kind: 'scrap' | 'relic' }
+type Pickup = { id: number; position: THREE.Vector3; kind: 'scrap' | 'relic' | 'survey'; surveyId?: string }
 
 function buildPickups(sector: Sector): Pickup[] {
   const pickups: Pickup[] = sector.scrap.map((p, id) => ({ id, position: new THREE.Vector3(...p), kind: 'scrap' }))
   if (sector.relic) pickups.push({ id: pickups.length, position: new THREE.Vector3(...sector.relic), kind: 'relic' })
+  if (sector.surveyBeacon && gameStats.sideEvent.status === 'available' && gameStats.sideEvent.id === sector.surveyBeacon.id)
+    pickups.push({
+      id: pickups.length,
+      position: new THREE.Vector3(...sector.surveyBeacon.position),
+      kind: 'survey',
+      surveyId: sector.surveyBeacon.id,
+    })
   return pickups
 }
 
-const cargoKind = (pickup: Pickup) => (pickup.kind === 'relic' ? 'relics' : 'scrap')
+const cargoKind = (pickup: Pickup) => (pickup.kind === 'relic' ? 'relics' : pickup.kind === 'survey' ? 'surveyData' : 'scrap')
 
 type ScrapFieldProps = {
   /** Mount this with `key={sector.id}` so a new sector starts fresh */
@@ -66,7 +75,7 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
 
   // Publish the pickups so the auto-pilot and the targeting system can find them
   useEffect(() => {
-    for (const p of pickups) scrapRegistry.set(p.id, { position: p.position.clone(), relic: p.kind === 'relic' })
+    for (const p of pickups) scrapRegistry.set(p.id, { position: p.position.clone(), kind: p.kind, surveyId: p.surveyId })
     return () => {
       for (const p of pickups) scrapRegistry.delete(p.id)
     }
@@ -128,7 +137,7 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
       let p = progress.current.get(id) ?? 0
       if (id === target.current) {
         // A Synth-Bot's beam is faster
-        const multiplier = pickup.kind === 'relic' ? RELIC_REEL_FACTOR : 1
+        const multiplier = pickup.kind === 'relic' ? RELIC_REEL_FACTOR : pickup.kind === 'survey' ? 2 : 1
         const reelTime = (tier.collectTime * multiplier) / currentSpecies().harvestSpeed
         p = Math.min(1, p + step / reelTime)
         if (p >= 1) collectedId = id
@@ -152,7 +161,8 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
     if (beamMesh) {
       const targetMesh = children.find((c) => c.userData.id === target.current)
       beamMesh.visible = Boolean(targetMesh)
-      const beamColor = target.current !== null && pickups[target.current].kind === 'relic' ? RELIC_COLOR : tier.beamColor
+      const selectedKind = target.current === null ? null : pickups[target.current].kind
+      const beamColor = selectedKind === 'relic' ? RELIC_COLOR : selectedKind === 'survey' ? SURVEY_COLOR : tier.beamColor
       ;(beamMesh.material as THREE.MeshBasicMaterial).color.set(beamColor)
       if (targetMesh) {
         scratch.copy(targetMesh.position).sub(ship)
@@ -170,7 +180,7 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
     if (mode !== 'pilot') setHarvest('Pilot mode only', 0)
     else if (t !== null)
       setHarvest(
-        `${pickups[t].kind === 'relic' ? 'Decoding relic' : 'Loading Raw Scrap'} ${Math.round(reeled * 100)}%`,
+        `${pickups[t].kind === 'relic' ? 'Decoding relic' : pickups[t].kind === 'survey' ? 'Recovering survey data' : 'Loading Raw Scrap'} ${Math.round(reeled * 100)}%`,
         reeled,
       )
     else if (inRange > 0) setHarvest(`${inRange} in range — hold F`, 0)
@@ -194,6 +204,9 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
             4500,
           )
         }
+      } else if (pickups[collectedId].kind === 'survey') {
+        const surveyId = pickups[collectedId].surveyId
+        stored = surveyId !== undefined && completeSurveyEvent(surveyId)
       } else {
         stored = tryAddCargo('scrap')
         if (stored) notify('Raw Scrap loaded into cargo', 'gain', 1000)
@@ -216,16 +229,21 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
         {pickups
           .filter((p) => !collected.has(p.id))
           .map((p) => (
-            <mesh key={p.id} position={p.position} userData={{ id: p.id }} {...targetHandlers(scrapRef(p.id, p.kind === 'relic'))}>
+            <mesh key={p.id} position={p.position} userData={{ id: p.id }} {...targetHandlers(scrapRef(p.id, p.kind))}>
               {/* A bigger invisible hit area, so small pickups are easy to click */}
               <mesh>
-                <sphereGeometry args={[p.kind === 'relic' ? 4 : 3, 8, 6]} />
+                <sphereGeometry args={[p.kind === 'survey' ? 5 : p.kind === 'relic' ? 4 : 3, 8, 6]} />
                 <meshBasicMaterial colorWrite={false} depthWrite={false} />
               </mesh>
               {p.kind === 'relic' ? (
                 <>
                   <icosahedronGeometry args={[1.4, 0]} />
                   <meshStandardMaterial color={RELIC_COLOR} emissive="#19c6e6" emissiveIntensity={1.8} metalness={0.7} roughness={0.2} />
+                </>
+              ) : p.kind === 'survey' ? (
+                <>
+                  <dodecahedronGeometry args={[2, 0]} />
+                  <meshStandardMaterial color={SURVEY_COLOR} emissive="#814bc9" emissiveIntensity={1.7} metalness={0.7} roughness={0.2} />
                 </>
               ) : (
                 <>
@@ -243,6 +261,14 @@ export function ScrapField({ sector, shipPosition, mode }: ScrapFieldProps) {
           <cylinderGeometry args={[2.5, 2.5, 1200, 16, 1, true]} />
           <meshBasicMaterial color={RELIC_COLOR} transparent opacity={0.16} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
         </mesh>
+      )}
+      {pickups.map((pickup) =>
+        pickup.kind === 'survey' && !collected.has(pickup.id) ? (
+          <mesh key={`survey-beacon-${pickup.id}`} position={pickup.position} raycast={() => null}>
+            <cylinderGeometry args={[3, 3, 900, 16, 1, true]} />
+            <meshBasicMaterial color={SURVEY_COLOR} transparent opacity={0.13} depthWrite={false} blending={THREE.AdditiveBlending} side={THREE.DoubleSide} />
+          </mesh>
+        ) : null,
       )}
 
       <mesh ref={beam} visible={false} raycast={() => null}>

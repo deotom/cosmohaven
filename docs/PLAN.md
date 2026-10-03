@@ -46,8 +46,8 @@
 - [x] Difficulty presets: Relaxed (30–40s, 0.8×), Standard (15–20s, 1×), Challenging (8–12s, 1.25×); ปรับช่วง meteor และราคาบล็อก/อัปเกรด/fold/ซ่อม
 - [x] ตรวจ Hunger/Sanity: ต่ำกว่า 40 ลูกเรือจะหา Food Dispenser/Arcade และฟื้นค่าที่บล็อก; ถ้าไม่มีบล็อกจะแจ้งใน HUD แต่ค่า 0 ยังไม่มี penalty/game-over โดยตรง
 - [x] Ship Modules: Engine (+25% thrust ต่อบล็อก สูงสุด 4), Shield (ลด impact damage 20% ต่อบล็อก สูงสุด 3), Repair Bay (ลูกเรือซ่อม 5 hull/s เมื่อ hull <75%); แสดงผลใน Shipyard/Systems และ remap ปุ่มเลือก 1–6 ได้
-- [x] Cargo economy: Haven Credits, จำกัด cargo 8 units, ขาย Scrap ที่ Trade Relay/drydock และ storage tech 3 แบบ
-- [ ] เป้าหมายรอง / เหตุการณ์สุ่มอื่นนอกจากอุกกาบาต
+- [x] Cargo economy: Haven Credits, จำกัด cargo 8 units, ขาย Scrap/Survey Data ที่ Trade Relay/drydock และ storage tech 3 แบบ
+- [x] เป้าหมายรอง / เหตุการณ์สุ่มอื่นนอกจากอุกกาบาต — Survey Beacon แบบ optional ใน sector ที่สร้างจาก seed; กู้ข้อมูลเข้า cargo และขายได้
 - [x] ตรวจพฤติกรรม hull 0 — hull ถูก clamp ที่ 0, ไม่มี Game Over state; ยานยังบินได้แต่ thrust เหลือ 55%
 
 ## Phase 4 — Polish & Release

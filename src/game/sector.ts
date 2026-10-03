@@ -1,7 +1,7 @@
 import type { Triplet } from '@react-three/cannon'
 import { useSyncExternalStore } from 'react'
 import * as THREE from 'three'
-import { CELESTIAL_BODIES, EARTH_2, gameStats, meteorTracks, setAutopilot, type CelestialBody } from './gameState'
+import { CELESTIAL_BODIES, EARTH_2, gameStats, meteorTracks, setAutopilot, SURVEY_DATA_SELL_VALUE, type CelestialBody } from './gameState'
 import { mulberry32 } from './rng'
 import { STATION_KEEP_OUT, type StationSpec } from './station'
 import { sunColor, sunDirection } from './sunState'
@@ -14,6 +14,7 @@ export type PlanetSpec = CelestialBody & {
   legendary?: boolean
 }
 export type AsteroidSpec = { position: Triplet; radius: number; spin: Triplet }
+export type SurveyBeaconSpec = { id: string; position: Triplet; name: string }
 
 /**
  * One star system. The ship always arrives at the origin, so positions are relative to the arrival
@@ -32,6 +33,8 @@ export type Sector = {
   scrap: Triplet[]
   /** A Signal Relic lies somewhere in most sectors, but not in the home sector */
   relic: Triplet | null
+  /** A recoverable survey beacon may appear in procedurally generated sectors */
+  surveyBeacon: SurveyBeaconSpec | null
   /** Where the sun is (unit vector from the ship towards it) and the colour of its light */
   sun: { direction: Triplet; color: string }
 }
@@ -139,6 +142,16 @@ function makeRelic(rand: () => number, planets: readonly PlanetSpec[]): Triplet 
   return null
 }
 
+function makeSurveyBeacon(rand: () => number, id: number, planets: readonly PlanetSpec[], stations: readonly StationSpec[]): SurveyBeaconSpec | null {
+  if (rand() >= 0.45) return null
+  for (let attempt = 0; attempt < 20; attempt++) {
+    const position = direction(rand).multiplyScalar(550 + rand() * 750).toArray() as Triplet
+    if (insideAnyPlanet(position, planets, 180) || nearStation(position, stations)) continue
+    return { id: `survey-${id}`, name: 'Survey Beacon', position }
+  }
+  return null
+}
+
 /** A procedurally generated star system: planet layout, asteroid fields, scrap clusters, maybe a relic. */
 export function generateSector(seed: number, id: number): Sector {
   const rand = mulberry32(seed)
@@ -161,6 +174,7 @@ export function generateSector(seed: number, id: number): Sector {
     scrap: makeScrap(rand, planets, 3 + Math.floor(rand() * 3), stations),
     relic: makeRelic(rand, planets),
     sun: { direction: direction(rand, 0.6).toArray() as Triplet, color: hex(rand(), 0.3, 0.92) },
+    surveyBeacon: makeSurveyBeacon(rand, id, planets, stations),
   }
 }
 
@@ -190,6 +204,7 @@ export function homeSector(): Sector {
     asteroids: makeAsteroids(rand, [kepler], 26, false, HOME_STATIONS),
     scrap: makeScrap(rand, [kepler], 2, HOME_STATIONS),
     relic: null,
+    surveyBeacon: null,
     sun: { direction: [0.84, 0.56, 0.28], color: '#fff4e0' },
   }
 }
@@ -208,6 +223,7 @@ export function earthSector(seed: number, id: number): Sector {
     asteroids: makeAsteroids(rand, [earth], 14, false, []),
     scrap: makeScrap(rand, [earth], 2, []),
     relic: null,
+    surveyBeacon: null,
     // Behind the arrival point, so the face of Earth that comes into view is the sunlit one
     sun: { direction: [0.3, 0.35, 0.9], color: '#fff1d6' },
   }
@@ -237,6 +253,19 @@ export function enterSector(sector: Sector) {
   CELESTIAL_BODIES.push(...sector.planets)
   gameStats.distanceToEarth = Infinity
   gameStats.relicDistance = null
+  if (sector.surveyBeacon) {
+    if (gameStats.sideEvent.id !== sector.surveyBeacon.id || gameStats.sideEvent.status !== 'complete') {
+      gameStats.sideEvent.id = sector.surveyBeacon.id
+      gameStats.sideEvent.name = sector.surveyBeacon.name
+      gameStats.sideEvent.status = 'available'
+      gameStats.sideEvent.dataValue = SURVEY_DATA_SELL_VALUE
+    }
+  } else {
+    gameStats.sideEvent.id = null
+    gameStats.sideEvent.name = ''
+    gameStats.sideEvent.status = 'none'
+    gameStats.sideEvent.dataValue = 0
+  }
   gameStats.well = null
   setAutopilot({ engaged: false, destination: 0, status: 'Off' })
   meteorTracks.clear()

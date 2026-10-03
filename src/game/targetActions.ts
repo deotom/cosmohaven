@@ -53,6 +53,7 @@ const ACTIONS: Record<TargetKind, MenuAction[]> = {
     { id: 'harvest-single', label: 'Harvest Single' },
     { id: 'harvest-sweep', label: 'Auto-Sweep Area' },
   ],
+  survey: [{ id: 'harvest-single', label: 'Recover Survey Data' }],
   planet: [
     { id: 'orbit', label: 'Enter Orbit' },
     { id: 'land', label: 'Initiate Landing' },
@@ -106,7 +107,8 @@ export function runAction(actionId: string, target: TargetRef) {
         notify('That is already gone', 'warning')
         return
       }
-      if (!canAddCargo(pickup.relic ? 'relics' : 'scrap')) {
+      const cargoKind = pickup.kind === 'relic' ? 'relics' : 'scrap'
+      if (!canAddCargo(cargoKind)) {
         notify('Cargo hold full · sell cargo at a Trade Relay', 'warning', 2500)
         return
       }
