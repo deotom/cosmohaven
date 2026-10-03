@@ -173,6 +173,10 @@ export const REPAIR_COST = 15
 export const REPAIR_AMOUNT = 25
 let repairReadyAt = 0
 
+export function resetRepairCooldown() {
+  repairReadyAt = 0
+}
+
 export function damageHull(amount: number) {
   gameStats.hull = Math.max(0, gameStats.hull - amount)
 }

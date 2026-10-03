@@ -40,6 +40,7 @@ src/
   scene/Scene.tsx       กล้องและฉาก Three.js (โหลดแบบ lazy)
   game/
     gameState.ts        state กลาง (gameStats) + HC/cargo/economy + ค่าคงที่และ helper
+    saveGame.ts         autosave ช่องเดียว, ตรวจ schema, restore progression/crew/ship/sector
     types.ts            BlockType, GridPos, crewStats, hazardStats
     sector.ts           สร้างระบบดาวจาก seed (planets, stations, asteroids, scrap, relic, sun)
     fold.ts             Space-Fold: charge → jump → arrive
@@ -66,7 +67,7 @@ src/
 จาก `useFrame`/event handler โดยตรง HUD อ่านผ่าน `useSampled(read, 200ms)` ใน `App.tsx` เพื่อไม่ให้ re-render 60fps
 - เพิ่มค่าใหม่ → ใส่ใน `gameStats`, ทำ setter, และ **copy ใน `readGameStats()`** ถ้าเป็น nested object
   (ไม่งั้น HUD จะได้ reference เดียวกันและไม่เห็นการเปลี่ยน)
-- HC เป็นเงิน; Scrap/Relics อยู่ใน cargo จนขายหรือปลดล็อก progression; refresh ยังเริ่มใหม่ (autosave อยู่ในแผน)
+- HC เป็นเงิน; Scrap/Relics/Survey Data อยู่ใน cargo จนขายหรือปลดล็อก progression; autosave ใช้ schema version 1 ใน localStorage ช่องเดียว
 
 ### 4.2 Sector (ระบบดาว)
 - `Sector` เป็น data ล้วนที่สร้างจาก seed (`mulberry32` ใน `rng.ts`) → reproducible

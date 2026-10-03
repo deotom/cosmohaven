@@ -8,6 +8,11 @@ export const FOLD_ARRIVAL_TIME = 1.6
 
 let nextSectorId = 1
 
+export function setNextSectorId(id: number) {
+  if (!Number.isInteger(id) || id < 1) throw new Error('Next sector id must be a positive integer')
+  nextSectorId = id
+}
+
 /** Starts a Space-Fold: spends HC and spins up the drive. Does nothing if already folding. */
 export function requestFold() {
   if (gameStats.victory || gameStats.fold.phase !== 'idle') return

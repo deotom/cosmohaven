@@ -54,7 +54,7 @@ const chipStyle = (selected: boolean): CSSProperties => ({
  * Crew registration: choose a name, a species with its own look options and racial passives, and a starting
  * specialty. A live 3D preview shows the result.
  */
-export function CrewRegistration({ onStart }: { onStart: (profile: CrewProfile) => void }) {
+export function CrewRegistration({ onStart, onCancel }: { onStart: (profile: CrewProfile) => void; onCancel?: () => void }) {
   const [name, setName] = useState(crewProfile.name)
   const [species, setSpecies] = useState<SpeciesId>(crewProfile.species)
   const [look, setLook] = useState<Look>({ ...DEFAULT_LOOK, ...crewProfile.look })
@@ -187,22 +187,31 @@ export function CrewRegistration({ onStart }: { onStart: (profile: CrewProfile) 
             ))}
           </div>
 
-          <div
-            role="button"
-            onClick={start}
-            style={{
-              textAlign: 'center',
-              padding: '13px 20px',
-              fontWeight: 800,
-              letterSpacing: 3,
-              fontSize: 16,
-              cursor: 'pointer',
-              borderRadius: 10,
-              background: 'linear-gradient(90deg, #2563eb, #7c3aed)',
-              boxShadow: '0 0 24px rgba(100,120,255,0.5)',
-            }}
-          >
-            REPORT TO THE DRYDOCK
+          <div style={{ display: 'flex', gap: 8 }}>
+            {onCancel && (
+              <button type="button" onClick={onCancel} style={{ flex: 1, padding: '13px 12px', borderRadius: 10, cursor: 'pointer', color: '#dbeaff', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.16)' }}>
+                BACK
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={start}
+              style={{
+                flex: 2,
+                padding: '13px 20px',
+                fontWeight: 800,
+                letterSpacing: 3,
+                fontSize: 16,
+                cursor: 'pointer',
+                borderRadius: 10,
+                color: '#fff',
+                border: 0,
+                background: 'linear-gradient(90deg, #2563eb, #7c3aed)',
+                boxShadow: '0 0 24px rgba(100,120,255,0.5)',
+              }}
+            >
+              REPORT TO THE DRYDOCK
+            </button>
           </div>
         </div>
 

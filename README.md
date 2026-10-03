@@ -25,6 +25,8 @@ Start by creating a crew member, then build and launch from the home drydock. Co
 
 The economy uses **Haven Credits (HC)**. Tractor-beam pickups occupy real cargo capacity and must be sold at the Trade Relay (90% rate) or a drydock (full rate). The starting hold fits 8 units; buy one of three storage technologies from the trade panel to expand or compress it. Relics occupy cargo space and cannot be sold. Some sectors also contain an optional Survey Beacon; recover its research data and sell it as valuable cargo.
 
+Progress is autosaved to one local save slot. Choose **Continue** to resume your ship, crew, sector, and economy, or **New Game** to begin a fresh run.
+
 ### Flight controls
 
 | Input | Action |

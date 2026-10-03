@@ -1,7 +1,7 @@
 import { Canvas } from '@react-three/fiber'
 import { lazy, Suspense, useCallback, useEffect, useState } from 'react'
 import { CrewRegistration } from './CrewRegistration'
-import { setCrewProfile } from './game/crewProfile'
+import type { CrewProfile } from './game/crewProfile'
 import type { Difficulty } from './game/difficulty'
 import { useDock } from './game/dock'
 import { closeContextMenu } from './game/targetActions'
@@ -19,6 +19,8 @@ import { CrewPanel, SystemsPanel } from './hud/SystemsPanel'
 import { DockButton, DockPrompt } from './hud/Warnings'
 import { ShipyardPanel } from './hud/ShipyardPanel'
 import { PauseMenu } from './hud/PauseMenu'
+import { StartMenu } from './hud/StartMenu'
+import { clearSaveSlot, createSaveSnapshot, readSaveSlot, resetNewGame, restoreSave, writeSaveSlot } from './game/saveGame'
 import {
   assignControlCode,
   readInputPreferences,
@@ -78,7 +80,7 @@ function FoldOverlay() {
   )
 }
 
-function VictoryOverlay() {
+function VictoryOverlay({ onPlayAgain }: { onPlayAgain: () => void }) {
   return (
     <div
       style={{
@@ -113,7 +115,7 @@ function VictoryOverlay() {
       </div>
       <div
         role="button"
-        onClick={() => window.location.reload()}
+        onClick={onPlayAgain}
         style={{
           padding: '12px 28px',
           border: '1px solid rgba(160,210,255,0.6)',
@@ -124,7 +126,7 @@ function VictoryOverlay() {
           animation: 'fade-in 2s ease-out 3s both',
         }}
       >
-        PLAY AGAIN
+        MAIN MENU
       </div>
     </div>
   )
@@ -134,6 +136,9 @@ export default function App() {
   const [blockCount, setBlockCount] = useState(1)
   const [selectedType, setSelectedType] = useState<PlaceableBlockType>('hull')
   const [started, setStarted] = useState(false)
+  const [registering, setRegistering] = useState(false)
+  const [saveSlot, setSaveSlot] = useState(readSaveSlot)
+  const [saveError, setSaveError] = useState<string | null>(saveSlot.error)
   const [paused, setPaused] = useState(false)
   const [difficulty, setDifficulty] = useState(gameStats.difficulty)
   const [initialPreferences] = useState(loadInputPreferences)
@@ -172,6 +177,67 @@ export default function App() {
     setDifficulty(next)
   }, [])
 
+  const continueGame = () => {
+    if (!saveSlot.save) return
+    try {
+      restoreSave(saveSlot.save)
+      setDifficulty(saveSlot.save.difficulty)
+      setVictory(saveSlot.save.game.victory)
+      setFrozen(saveSlot.save.game.victory)
+      setPaused(false)
+      setTradeOpen(false)
+      setInterior(false)
+      setCameraView('chase')
+      setRegistering(false)
+      setStarted(true)
+      setSaveError(null)
+    } catch (error) {
+      console.error('Failed to restore saved game', error)
+      setSaveError(error instanceof Error ? error.message : 'Failed to restore saved game')
+    }
+  }
+
+  const startNewGame = (profile: CrewProfile) => {
+    const clearError = clearSaveSlot()
+    resetNewGame(profile)
+    setSaveSlot({ save: null, error: null })
+    setSaveError(clearError)
+    setDifficulty(gameStats.difficulty)
+    setVictory(false)
+    setFrozen(false)
+    setPaused(false)
+    setTradeOpen(false)
+    setInterior(false)
+    setCameraView('chase')
+    setSelectedType('hull')
+    setRegistering(false)
+    setStarted(true)
+  }
+
+  useEffect(() => {
+    if (!started) return
+    const saveNow = () => {
+      try {
+        const snapshot = createSaveSnapshot()
+        const error = writeSaveSlot(snapshot)
+        if (error) {
+          setSaveError(error)
+        } else {
+          setSaveError(null)
+        }
+      } catch (error) {
+        console.error('Failed to create autosave snapshot', error)
+        setSaveError(error instanceof Error ? error.message : 'Failed to create autosave snapshot')
+      }
+    }
+    const interval = window.setInterval(saveNow, 1000)
+    window.addEventListener('pagehide', saveNow)
+    return () => {
+      window.clearInterval(interval)
+      window.removeEventListener('pagehide', saveNow)
+    }
+  }, [started])
+
   useEffect(() => {
     if (!victory) return
     const id = setTimeout(() => setFrozen(true), 2500)
@@ -179,7 +245,7 @@ export default function App() {
   }, [victory])
 
   // Mouse steering grabs the pointer in pilot mode; orbit view needs the cursor for drag-to-look
-  const mouseLocked = usePointerLock(mode === 'pilot' && cameraView === 'chase' && !interior && !victory && !paused)
+  const mouseLocked = usePointerLock(started && mode === 'pilot' && cameraView === 'chase' && !interior && !victory && !paused)
 
   const toggleCameraView = () => setCameraView((v) => (v === 'chase' ? 'orbit' : 'chase'))
 
@@ -199,13 +265,15 @@ export default function App() {
     return () => window.removeEventListener('keydown', onKey)
   }, [mode, paused, victory, started])
 
+  if (!started && !registering) {
+    return <StartMenu save={saveSlot.save} error={saveError} onContinue={continueGame} onNewGame={() => setRegistering(true)} />
+  }
+
   if (!started) {
     return (
       <CrewRegistration
-        onStart={(profile) => {
-          setCrewProfile(profile)
-          setStarted(true)
-        }}
+        onStart={startNewGame}
+        onCancel={() => setRegistering(false)}
       />
     )
   }
@@ -229,6 +297,11 @@ export default function App() {
       </Canvas>
 
       <ShipPanel mode={mode} cameraView={cameraView} interior={interior} mouseLocked={mouseLocked} selectedType={selectedType} blockCount={blockCount} />
+      {saveError && (
+        <div role="alert" style={{ position: 'absolute', left: 16, top: 140, maxWidth: 360, padding: 10, border: '1px solid #ff7979', borderRadius: 6, color: '#ffb5b5', background: 'rgba(40,0,0,0.8)', fontSize: 12 }}>
+          Autosave error: {saveError}
+        </div>
+      )}
 
       <div className="hud-right-stack" style={{ position: 'absolute', top: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
         <CrewPanel />
@@ -282,7 +355,17 @@ export default function App() {
           onResetControls={resetControls}
         />
       )}
-      {victory && <VictoryOverlay />}
+      {victory && (
+        <VictoryOverlay
+          onPlayAgain={() => {
+            setVictory(false)
+            setFrozen(false)
+            setStarted(false)
+            setRegistering(false)
+            setSaveSlot(readSaveSlot())
+          }}
+        />
+      )}
     </>
   )
 }

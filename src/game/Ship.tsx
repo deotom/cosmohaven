@@ -163,7 +163,7 @@ type ShipProps = {
 }
 
 export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, selectedType, crewWorldOut, onVictory }: ShipProps) {
-  const [blocks, setBlocks] = useState<Block[]>([{ pos: [0, 0, 0], type: 'core' }])
+  const [blocks, setBlocks] = useState<Block[]>(() => shipState.blocks.map((block) => ({ ...block, pos: [...block.pos] as GridPos })))
   const [ghost, setGhost] = useState<GridPos | null>(null)
   const occupied = useMemo(() => new Set(blocks.map((b) => gridKey(b.pos))), [blocks])
   const keys = useKeyboard(mode === 'pilot')
@@ -177,28 +177,38 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
   )
   const group = useRef<THREE.Group>(null)
   /** The centre of mass the current physics body was built around (ship space) */
-  const bodyCom = useRef<Triplet>([0, 0, 0])
+  const bodyCom = useRef<Triplet>(com)
 
   // Latest physics state, mirrored from the worker so the body can be rebuilt
   // (when blocks change) without teleporting or losing momentum
   const physics = useRef({
-    position: initialPosition(),
-    quaternion: [0, 0, 0, 1] as Quad,
-    velocity: [0, 0, 0] as Triplet,
-    angularVelocity: [0, 0, 0] as Triplet,
+    position: shipState.hasSavedTransform ? shipState.position.toArray() as Triplet : initialPosition(),
+    quaternion: shipState.hasSavedTransform ? shipState.quaternion.toArray() as Quad : [0, 0, 0, 1] as Quad,
+    velocity: shipState.velocity.toArray() as Triplet,
+    angularVelocity: shipState.angularVelocity.toArray() as Triplet,
   })
 
   // Blocks the shipyard drones are still assembling, in order; the first is being built now
-  const [pending, setPending] = useState<Pending[]>([])
+  const [pending, setPending] = useState<Pending[]>(() =>
+    shipState.pending.map(({ pos, type, total }) => ({ pos: [...pos] as GridPos, type, total })),
+  )
   const pendingRef = useRef<Pending[]>([])
-  const buildProgress = useRef(0)
+  const buildProgress = useRef(shipState.pending[0]?.progress ?? 0)
   const busy = useRef(false)
   const shipMass = useRef(1)
   const lastHit = useRef(0)
   useEffect(() => {
     pendingRef.current = pending
     busy.current = pending.length > 0
+    shipState.pending = pending.map((item, index) => ({
+      ...item,
+      pos: [...item.pos] as GridPos,
+      progress: index === 0 ? buildProgress.current : 0,
+    }))
   }, [pending])
+  useEffect(() => {
+    shipState.blocks = blocks.map((block) => ({ ...block, pos: [...block.pos] as GridPos }))
+  }, [blocks])
   useEffect(() => {
     shipMass.current = blocks.length * BLOCK_MASS
   }, [blocks.length])
@@ -311,6 +321,11 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     // @react-three/cannon writes the body's transform straight into `matrix` (and turns off
     // matrixAutoUpdate), so `position`/`quaternion` on the group stay at their initial values
     ref.current?.matrix.decompose(positionOut.current, quaternionOut.current, scale)
+    shipState.position.copy(positionOut.current)
+    shipState.quaternion.copy(quaternionOut.current)
+    shipState.velocity.fromArray(physics.current.velocity)
+    shipState.angularVelocity.fromArray(physics.current.angularVelocity)
+    shipState.hasSavedTransform = true
 
     setThrustLevel(0) // set again below on frames where the engine fires
 
@@ -323,6 +338,9 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
       physics.current.velocity = [0, 0, 0]
       physics.current.angularVelocity = [0, 0, 0]
       positionOut.current.set(0, 0, 0)
+      shipState.position.set(0, 0, 0)
+      shipState.velocity.set(0, 0, 0)
+      shipState.angularVelocity.set(0, 0, 0)
     }
 
     // Shipyard: while docked, drones assemble the queued blocks one at a time
@@ -337,6 +355,11 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
       construction.active = true
       construction.progress = Math.min(1, buildProgress.current)
       setConstruction(queue.map((q, i) => ({ type: q.type, progress: i === 0 ? construction.progress : 0 })))
+      shipState.pending = queue.map((item, index) => ({
+        ...item,
+        pos: [...item.pos] as GridPos,
+        progress: index === 0 ? construction.progress : 0,
+      }))
       if (buildProgress.current >= 1) {
         const done = queue[0]
         buildProgress.current = 0
@@ -346,6 +369,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     } else if (construction.active || gameStats.construction.length > 0) {
       construction.active = false
       buildProgress.current = 0
+      shipState.pending = []
       setConstruction([])
     }
 
