@@ -2,7 +2,7 @@ import type { Dispatch, SetStateAction } from 'react'
 import { nextTask, nextWaypoint, toggleAutopilot } from '../game/autopilot'
 import { requestDockToggle } from '../game/dock'
 import { emergencyRepair, gameStats, getFoldCost, getRepairCost, notify, requestArrival } from '../game/gameState'
-import { requestFold } from '../game/fold'
+import { toggleFold } from '../game/fold'
 import { upgrade } from '../game/upgrades'
 import { actionsFor, closeContextMenu, runAction } from '../game/targetActions'
 import { cycleTarget } from '../game/targetScreen'
@@ -175,7 +175,7 @@ export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
       break
     }
     case 'fold':
-      requestFold()
+      toggleFold()
       break
     case 'repair':
       emergencyRepair()

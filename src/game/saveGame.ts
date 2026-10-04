@@ -368,7 +368,8 @@ export function createSaveSnapshot(): SavedGame {
     profile: { ...crewProfile, look: { ...crewProfile.look } },
     difficulty: gameStats.difficulty,
     game: {
-      credits: gameStats.credits,
+      // A fold still charging is not saved, so its fee goes back into the saved balance rather than vanishing
+      credits: gameStats.credits + (gameStats.fold.phase === 'charging' ? gameStats.fold.reserved : 0),
       cargo: { ...gameStats.cargo },
       storageTech: gameStats.storageTech,
       ownedStorageTechs: [...gameStats.ownedStorageTechs],
@@ -424,7 +425,7 @@ export function restoreSave(save: SavedGame) {
   gameStats.notice = null
   gameStats.well = null
   gameStats.thrustLevel = 0
-  gameStats.fold = { phase: 'idle', charge: 0 }
+  gameStats.fold = { phase: 'idle', charge: 0, reserved: 0 }
   gameStats.arrival = { ...save.flight.arrival }
   gameStats.harvest = { text: 'Pilot mode only', progress: 0 }
   crewStats.hunger = save.crew.hunger
@@ -479,7 +480,7 @@ export function resetNewGame(profile: CrewProfile) {
   gameStats.relics = 0
   gameStats.relicDistance = null
   gameStats.sideEvent = { id: null, name: '', status: 'none', dataValue: 0 }
-  gameStats.fold = { phase: 'idle', charge: 0 }
+  gameStats.fold = { phase: 'idle', charge: 0, reserved: 0 }
   gameStats.harvesterTier = 1
   gameStats.autopilotTier = 1
   gameStats.thrustUsed = 0

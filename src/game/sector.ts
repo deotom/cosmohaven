@@ -229,6 +229,21 @@ export function earthSector(seed: number, id: number): Sector {
   }
 }
 
+/** Space kept clear around the arrival point (the origin) for a folding ship, beyond a rock's own radius. */
+export const ARRIVAL_CLEARANCE = 8
+
+/** Why a folding ship could not safely appear at the origin of `sector`, or null if the spot is clear. */
+export function arrivalHazard(sector: Sector): string | null {
+  for (const planet of sector.planets) {
+    if (Math.hypot(...planet.position) < planet.wellRadius) return `inside the gravity well of ${planet.name}`
+  }
+  for (const station of sector.stations) {
+    if (Math.hypot(...station.position) < STATION_KEEP_OUT) return `too close to ${station.name}`
+  }
+  if (sector.asteroids.some((rock) => Math.hypot(...rock.position) < rock.radius + ARRIVAL_CLEARANCE)) return 'inside an asteroid'
+  return null
+}
+
 // --- The current sector, as a tiny external store so React can re-render when it changes ---
 
 let current: Sector = homeSector()
