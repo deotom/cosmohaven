@@ -16,6 +16,7 @@ import { HelpOverlay } from './hud/HelpOverlay'
 import { TradePanel } from './hud/TradePanel'
 import { buttonStyle } from './hud/styles'
 import { useSampled } from './hud/useSampled'
+import { Radar } from './hud/Radar'
 import { ShipPanel } from './hud/ShipPanel'
 import { CrewPanel, SystemsPanel } from './hud/SystemsPanel'
 import { DockButton, DockPrompt } from './hud/Warnings'
@@ -352,13 +353,14 @@ export default function App() {
       </div>
 
       {mode === 'build' && <ShipyardPanel selectedType={selectedType} onSelect={setSelectedType} />}
+      {mode === 'pilot' && <Radar />}
       <DockPrompt />
       <ArrivalPanel />
       <TargetReticle />
       <ContextMenu />
 
       <div
-        className="hud-bottom-controls"
+        className={`hud-bottom-controls${mode === 'pilot' ? ' hud-flight-controls' : ''}`}
         style={{
           position: 'absolute',
           left: 16,

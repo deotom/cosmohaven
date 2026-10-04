@@ -1,7 +1,6 @@
 import { CONTRACT_LABELS, contractHave } from '../game/contracts'
 import { getBlockCost, getCargoCapacity, getCargoVolume, RELICS_NEEDED, readGameStats } from '../game/gameState'
 import { useSector } from '../game/sector'
-import { shipState } from '../game/shipState'
 import { isFollowView, type CameraView, type GameMode, type PlaceableBlockType } from '../game/types'
 import { BLOCK_COLORS, BLOCK_LABELS, hudStyle } from './styles'
 import { useSampled } from './useSampled'
@@ -15,15 +14,12 @@ type ShipPanelProps = {
   blockCount: number
 }
 
-const readSpeed = () => Math.round(shipState.velocity.length())
-
 /**
  * The always-on ship readout. It shows only what is needed at a glance; everything else is contextual (it appears
  * when it applies) or lives in the help overlay ([?]) so the view of the scene stays clear.
  */
 export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedType, blockCount }: ShipPanelProps) {
   const game = useSampled(readGameStats)
-  const speed = useSampled(readSpeed, 250)
   const sector = useSector()
   const cost = getBlockCost(selectedType)
   const notice = game.notice
@@ -37,7 +33,7 @@ export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedTyp
   return (
     <div className="hud-ship-panel" style={hudStyle}>
       <div style={{ fontWeight: 700, letterSpacing: 2, color: mode === 'pilot' ? '#ffcc33' : '#7fd4ff' }}>
-        {mode === 'pilot' ? `IN FLIGHT · ${speed} u/s` : 'DOCKED · SHIPYARD'}
+        {mode === 'pilot' ? 'IN FLIGHT' : 'DOCKED · SHIPYARD'}
       </div>
       <div>
         <span style={{ color: hullColor }}>Hull {Math.round(game.hull)}%</span> · <span style={{ color: '#ffd633' }}>{game.credits} HC</span>

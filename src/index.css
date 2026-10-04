@@ -20,6 +20,31 @@ body {
   background: #02030a;
 }
 
+.hud-flight-controls {
+  bottom: 208px !important;
+}
+
+body:has(.hud-trade-panel) .hud-flight-controls,
+body:has(.hud-trade-panel) .hud-radar,
+body:has(.hud-trade-panel) .hud-dock-prompt {
+  display: none !important;
+}
+
+.hud-dock-prompt {
+  bottom: 268px !important;
+  max-width: 500px;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+@media (min-width: 901px) and (max-width: 1400px) {
+  .hud-flight-controls > * {
+    padding: 8px 10px !important;
+    font-size: 11px !important;
+    letter-spacing: 1px !important;
+  }
+}
+
 @media (max-width: 900px) {
   .hud-ship-panel {
     box-sizing: border-box;
@@ -94,6 +119,20 @@ body {
   .hud-bottom-controls > * {
     padding: 7px 9px !important;
     font-size: 10px !important;
+  }
+
+  .hud-radar {
+    bottom: 8px !important;
+    width: 140px !important;
+    height: 140px !important;
+  }
+
+  .hud-flight-controls {
+    bottom: 156px !important;
+  }
+
+  .hud-dock-prompt {
+    bottom: 242px !important;
   }
 }
 
