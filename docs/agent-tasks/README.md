@@ -15,7 +15,7 @@ agent ทุกตัวสร้าง/สลับ branch ใน `C:\cosmohave
 powershell -ExecutionPolicy Bypass -File docs\agent-tasks\new-worktree.ps1 -Task T3 -Branch feature/hud-radar -Port 5303
 ```
 ได้โฟลเดอร์ `C:\cosmohaven-wt\T3` จาก `master` ล่าสุด พร้อม `node_modules` ของตัวเอง (`npm ci` ประมาณ 40 วินาที) → **ให้ agent ทำงานในโฟลเดอร์นั้น** และใช้พอร์ต dev server ของตัวเองเท่านั้น; **ห้ามแชร์ `node_modules` ด้วย junction/symlink** (เคยทำให้ `git worktree remove` ลบไฟล์ใน `node_modules` จริงไปครึ่งหนึ่ง ต้อง `npm ci` กู้); งานเดียวที่ทำคนเดียวใช้ `C:\cosmohaven` ตรง ๆ ได้ถ้าไม่มี dev server ของใครรันอยู่
-พอร์ตที่เสนอ: T2=5302, T3=5303, T7=5307, T8=5308, T9=5309
+พอร์ตที่เสนอ: T2=5302, T3=5303, T7=5307, T8=5308, T9=5309, T12=5312
 
 ### Prompt มาตรฐาน (ก๊อปไปวางได้เลย)
 ```
@@ -44,6 +44,7 @@ powershell -ExecutionPolicy Bypass -File docs\agent-tasks\new-worktree.ps1 -Task
 | [T7](T7-planet-surface-p1.md) | ผิวดาว/ลงจอด P0–P1 (วินิจฉัย + detail + props + ฝุ่น + ดาวแก๊สไม่ลงจอด) | `feature/planet-surface` | 8.15 | `Planet.tsx`, `Earth.tsx`, `Ship.tsx` (ส่วนแตะพื้น), `ArrivalPanel.tsx`, ไฟล์ใหม่ | — | ✅ กับ T2/T3; ❌ กับ T6 |
 | [T8](T8-autopilot-trajectory-sim.md) | จำลองวิถีจริง (แรงโน้มถ่วง) ของ autopilot แล้วแก้ให้ไม่ชน/ไม่ถูกดูด | `feature/autopilot-sim` | 8.14 ค, log T1 | `autopilotSim.ts` (ใหม่), `autopilot.ts`, `pathPlanner.ts` | T1 ✅ | ✅ กับ T2/T3/T7; ❌ กับ T6 (รวมกันได้) |
 | [T9](T9-meteor-variety.md) | อุกกาบาตหลากหลาย (ขนาด/รูปร่าง/จังหวะ) และไม่ถี่เกิน | `feature/meteor-variety` | 8.1 | `meteorField.ts`, `meteorGeometry.ts` (ใหม่), `EventManager.tsx`, `difficulty.ts` | — | ✅ กับ T2/T3/T7/T8 (T9 ไม่แตะ autopilot) |
+| [T12](T12-landing-gear.md) | ขาลงจอดพื้นฐาน (P1.5): ลงจอดแปลก ๆ เพราะประกาศ landed ตอนลอย 4.5 หน่วย + ไม่มีขา | `feature/landing-gear` | 8.15 (P1.5) | `landingGear.ts` (ใหม่), `LandingGear.tsx` (ใหม่), `Ship.tsx` (ส่วนแตะพื้น), `autopilot.ts` (LAND_ALTITUDE), `keymap.ts` | T7 ✅ | ✅ กับ T4/T5; ❌ กับงานอื่นที่แก้ `Ship.tsx`/`autopilot.ts` |
 
 **สถานะงาน (อัปเดตโดย lead):**
 - **T1 ✅ เสร็จ — merge เข้า master ในเครื่องแล้ว** (ดู `docs/agent-log/T1-autopilot-avoidance.md` ส่วน Lead review)
