@@ -586,7 +586,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
       api.applyTorque(torque.toArray() as Triplet)
 
       setAutopilot({ status: out.status, distance: out.distance })
-      if (out.requestFold) requestFold()
+      if (out.requestFold) requestFold('auto')
       if (out.requestDock) dockRequests.toggle = true
       return
     }

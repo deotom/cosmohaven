@@ -1,6 +1,7 @@
 import { TASK_LABELS, setTask } from '../game/autopilot'
 import { AUTOPILOT_TIERS, HARVESTER_TIERS, nextUpgradeCost, upgrade } from '../game/upgrades'
 import { CELESTIAL_BODIES, getFoldCost, readGameStats } from '../game/gameState'
+import { foldChecklist } from '../game/fold'
 import { ROLES, crewProfile } from '../game/crewProfile'
 import { SPECIES } from '../game/species'
 import { Bar } from './Bar'
@@ -11,6 +12,7 @@ import { MeteorWarnings } from './Warnings'
 
 export function SystemsPanel() {
   const game = useSampled(readGameStats)
+  const foldChecks = useSampled(foldChecklist)
   const harvester = HARVESTER_TIERS[game.harvesterTier - 1]
   const nextHarvester = HARVESTER_TIERS[game.harvesterTier]
   const autopilot = AUTOPILOT_TIERS[game.autopilotTier - 1]
@@ -97,8 +99,17 @@ export function SystemsPanel() {
           ? `Charging ${Math.round(game.fold.charge * 100)}%`
           : game.fold.phase === 'arriving'
             ? 'Arriving…'
-            : 'Ready (pilot mode)'}
+            : foldChecks.every((check) => check.ok)
+              ? 'Ready (pilot mode)'
+              : 'Not ready'}
       </div>
+      {game.fold.phase === 'charging' && <div style={{ opacity: 0.8 }}>[J] again to cancel</div>}
+      {game.fold.phase === 'idle' &&
+        foldChecks.map((check) => (
+          <div key={check.id} style={{ color: check.ok ? '#4dffb8' : '#ff8a8a', fontSize: 12 }}>
+            {check.ok ? '✓' : '✗'} {check.label}
+          </div>
+        ))}
 
       <div style={{ marginTop: 8, opacity: 0.8 }}>Thrust used: {game.thrustUsed.toFixed(1)} s</div>
     </div>

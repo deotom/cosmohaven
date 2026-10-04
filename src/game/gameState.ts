@@ -121,7 +121,7 @@ export const gameStats = {
   relicDistance: null as number | null,
   sideEvent: { id: null as string | null, name: '', status: 'none' as 'none' | 'available' | 'complete', dataValue: 0 },
   /** Space-Fold drive: idle, charging up (charge 0-1) or arriving (the flash fading, charge 0-1) */
-  fold: { phase: 'idle' as 'idle' | 'charging' | 'arriving', charge: 0 },
+  fold: { phase: 'idle' as 'idle' | 'charging' | 'arriving', charge: 0, /** HC taken for the charge in progress, refunded if it is cancelled */ reserved: 0 },
   harvesterTier: 1,
   autopilotTier: 1,
   /** Seconds of full-power main thrust burned so far (a stand-in for fuel) */
