@@ -16,6 +16,7 @@ import {
 } from './gameState'
 import { planPath, type Obstacle, type PlannedPath } from './pathPlanner'
 import { landRefusal } from './surfaceDetail'
+import { GEAR_LENGTH } from './landingGear'
 import { scrapRegistry, type TargetState } from './targets'
 
 /** Max angular acceleration the auto-pilot asks for, matching the manual controls (rad/s²). */
@@ -55,7 +56,8 @@ const ORBIT_SAFE_CLEARANCE = 25 // never circularise lower than this above the t
 // De-orbit and landing
 const DEORBIT_TANGENTIAL_SPEED = 4 // sideways speed at which the ship is considered "dropped"
 const TOUCH_SPEED = 4 // the speed the auto-pilot aims to touch down at; the safe limit is 12
-export const LAND_ALTITUDE = 5 // centre-of-ship altitude counted as touchdown
+// Give the velocity controller room to settle at TOUCH_SPEED before the feet, rather than at the hull centre.
+export const LAND_ALTITUDE = (height = 0.5 + GEAR_LENGTH) => Math.max(0.5, height) + 3
 export const SAFE_LANDING_SPEED = 12
 
 // Harvest and evacuation
@@ -96,6 +98,8 @@ export type AutopilotInput = {
   /** How far the auto-pilot looks for scrap (a Floran sees further) */
   scanRange: number
   hull: number
+  /** Actual radial support height of the feet (or belly when stowed). */
+  landingHeight?: number
   /** What to steer round (see `obstaclesFor`); left out, the auto-pilot flies straight */
   obstacles?: readonly Obstacle[]
 }
@@ -512,7 +516,7 @@ function descentController(input: AutopilotInput, body: CelestialBody, out: Auto
 
   // How fast we may fall at this height and still be able to brake to TOUCH_SPEED by the ground
   const brakeAccel = Math.max(0.6, 0.6 * (input.mainAccel - pull))
-  const wanted = -Math.min(45, Math.sqrt(TOUCH_SPEED ** 2 + 2 * brakeAccel * Math.max(altitude - LAND_ALTITUDE, 0)))
+  const wanted = -Math.min(45, Math.sqrt(TOUCH_SPEED ** 2 + 2 * brakeAccel * Math.max(altitude - LAND_ALTITUDE(input.landingHeight), 0)))
   const outwardAccel = pull + 2 * (wanted - radialSpeed)
 
   const angle = holdAttitude(input, v.rHat, out)

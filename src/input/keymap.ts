@@ -1,6 +1,7 @@
 import type { Dispatch, SetStateAction } from 'react'
 import { nextTask, nextWaypoint, toggleAutopilot } from '../game/autopilot'
-import { requestDockToggle } from '../game/dock'
+import { getDock, requestDockToggle } from '../game/dock'
+import { toggleGear } from '../game/landingGear'
 import { emergencyRepair, gameStats, getFoldCost, getRepairCost, notify, requestArrival } from '../game/gameState'
 import { toggleFold } from '../game/fold'
 import { upgrade } from '../game/upgrades'
@@ -26,6 +27,7 @@ type KeyAction =
   | 'targetCycle'
   | 'arrivalOrbit'
   | 'arrivalLand'
+  | 'landingGear'
   | 'closeMenu'
   | 'targetAction'
   | 'fold'
@@ -67,6 +69,7 @@ export const KEY_BINDINGS: readonly Binding[] = [
   { code: 'KeyT', key: 'T', mode: 'pilot', action: 'targetCycle', hint: 'Cycle target', control: 'targetCycle' },
   { code: 'KeyO', key: 'O', mode: 'pilot', action: 'arrivalOrbit', hint: 'Enter orbit', control: 'arrivalOrbit' },
   { code: 'KeyL', key: 'L', mode: 'pilot', action: 'arrivalLand', hint: 'Initiate landing', control: 'arrivalLand' },
+  { code: 'KeyG', key: 'G', mode: 'pilot', action: 'landingGear', hint: 'Deploy / stow landing gear' },
   { code: 'Escape', key: 'Esc', mode: 'pilot', action: 'closeMenu' },
   { code: 'Digit1-4', key: '1–4', mode: 'pilot', action: 'targetAction', hint: 'Run locked-target action' },
   { code: 'KeyJ', key: 'J', mode: 'pilot', action: 'fold', hint: 'Space-Fold', unavailableAfterVictory: true, control: 'fold' },
@@ -176,6 +179,9 @@ export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
       break
     case 'arrivalLand':
       requestArrival('land')
+      break
+    case 'landingGear':
+      toggleGear(getDock().phase !== 'free' || gameStats.autopilot.task === 'dock')
       break
     case 'closeMenu':
       closeContextMenu()

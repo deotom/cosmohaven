@@ -10,7 +10,6 @@ import { BlockModel } from './ShipBlocks'
 import {
   HARVEST_SCAN_RANGE,
   INFLUENCE_FRACTION,
-  LAND_ALTITUDE,
   SAFE_LANDING_SPEED,
   createAutopilotOutput,
   manualDescent,
@@ -57,6 +56,8 @@ import { obstaclesFor } from './pathPlanner'
 import { linearDamping } from './damping'
 import { canRemove, pickRemovable } from './shipGraph'
 import { stationPose } from './station'
+import { LandingGear } from './LandingGear.tsx'
+import { computeGearLayout, gearPose, gearState, isTouchdown, landingDamage, recordGearImpact, reportGearHeight, retractGear, stepSuspension, TOUCH_TOLERANCE, updateGear, type SuspensionStep } from './landingGear'
 
 const BLOCK_STYLES: Record<BlockType, { color: string; emissive: string; emissiveIntensity: number; edge: string }> = {
   core: { color: '#1fb6ff', emissive: '#0a5cff', emissiveIntensity: 0.8, edge: '#bfefff' },
@@ -177,6 +178,10 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
   const stick = useRef({ x: 0, y: 0 })
   const inertia = useMemo(() => shipInertia(blocks), [blocks])
   const com = useMemo(() => centerOfMass(blocks), [blocks])
+  const gearLayout = useMemo(() => computeGearLayout(blocks), [blocks])
+  const groundContact = useRef(false)
+  const gearImpact = useRef(0)
+  const suspension = useRef<SuspensionStep | null>(null)
   const exposures = useMemo(
     () => blocks.map((b) => exposureOf(b.pos, (x, y, z) => occupied.has(gridKey([x, y, z])))),
     [blocks, occupied],
@@ -384,6 +389,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
 
     // Held by the shipyard: no flying, no gravity, no autopilot
     if (getDock().phase !== 'free') {
+      retractGear()
       takeMouseMovement()
       stick.current.x = stick.current.y = 0
       reportWell(null)
@@ -464,6 +470,25 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
     // --- Arrival at a planet ---
     const dominant = gravity.dominant
     const arrivalNow = gameStats.arrival
+    const radialUp = dominant
+      ? positionOut.current.clone().sub(new THREE.Vector3(...dominant.body.position)).normalize()
+      : new THREE.Vector3(0, 1, 0).applyQuaternion(quaternionOut.current)
+    const radialSpeed = shipState.velocity.dot(radialUp)
+    const gearAltitude = dominant ? positionOut.current.distanceTo(new THREE.Vector3(...dominant.body.position)) - dominant.body.radius : Infinity
+    updateGear(arrivalNow.phase, gearAltitude, radialSpeed, dt, getDock().phase !== 'free' || gameStats.autopilot.task === 'dock')
+    const pose = gearPose(gearLayout, blocks, quaternionOut.current, radialUp, dominant?.body.radius ?? 10000)
+    const deployed = gearState.progress >= 0.99
+    const supportHeight = deployed ? pose.supportHeight : pose.bellyHeight
+    if (gearAltitude > supportHeight + 0.5) gearImpact.current = 0
+    reportGearHeight(supportHeight)
+    if (dominant && isLandable(dominant.body) && deployed) {
+      const step = stepSuspension(suspension.current, physics.current.velocity, gearAltitude, supportHeight, radialSpeed, gameStats.victory ? 0 : dominant.accel, Math.min(dt, 0.1))
+      suspension.current = step
+      const accel = step.acceleration
+      gearImpact.current = recordGearImpact(gearImpact.current, radialSpeed, accel > 0)
+      const force = accel * blocks.length * BLOCK_MASS * Math.min(dt, 0.1) * 60
+      if (force > 0) api.applyForce(radialUp.clone().multiplyScalar(force).toArray() as Triplet, [0, 0, 0])
+    } else suspension.current = null
     if (dominant && !gameStats.victory) {
       const index = CELESTIAL_BODIES.indexOf(dominant.body)
       const altitude = dominant.distance - dominant.body.radius
@@ -483,12 +508,15 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
 
       // Touchdown: slow enough is a landing (on Earth 2.0, the end of the journey); faster is a crash, which the
       // collision damage already handles
-      if (altitude < LAND_ALTITUDE && arrivalNow.phase !== 'landed' && arrivalNow.phase !== 'none' && isLandable(dominant.body)) {
-        const v = physics.current.velocity
-        const radial = new THREE.Vector3(...v).dot(
-          new THREE.Vector3(...physics.current.position).sub(new THREE.Vector3(...dominant.body.position)).normalize(),
-        )
-        if (-radial <= SAFE_LANDING_SPEED) {
+      if (altitude > supportHeight + 0.5) groundContact.current = false
+      if (altitude <= supportHeight + TOUCH_TOLERANCE && !groundContact.current && isLandable(dominant.body)) {
+        groundContact.current = true
+        const impact = Math.max(0, -radialSpeed, deployed ? gearImpact.current : 0)
+        if (impact > SAFE_LANDING_SPEED) handleImpact(impact)
+        else damageHull(landingDamage(impact, deployed) * shieldDamageFactor(blocks))
+      }
+      if (arrivalNow.phase !== 'landed' && arrivalNow.phase !== 'none' && isLandable(dominant.body)) {
+        if (isTouchdown(altitude, supportHeight, radialSpeed)) {
           setArrival({ phase: 'landed', body: index })
           setAutopilot({ engaged: false, status: 'Off' })
           if (dominant.body.name === EARTH_2.name) {
@@ -571,6 +599,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
         harvestRange: currentHarvester().range,
         scanRange: HARVEST_SCAN_RANGE * currentSpecies().scanRange,
         hull: gameStats.hull,
+        landingHeight: supportHeight,
         obstacles: obstaclesFor(getSector()),
       }
 
@@ -693,6 +722,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
 
   return (
     <group ref={ref}>
+      <LandingGear layout={gearLayout} blocks={blocks} />
       {/* The body origin is the centre of mass, so the blocks are drawn offset from it */}
       <group position={[-com[0], -com[1], -com[2]]}>
         {blocks.map(({ pos, type }, i) => (
