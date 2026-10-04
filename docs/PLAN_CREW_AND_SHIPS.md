@@ -590,7 +590,7 @@ type SaveGame     = { schemaVersion; ships: ShipInstance[]; crew: CrewInstance[]
 ### Phase P — Planet Surface & Landing Experience *(P0–P1 ทำก่อน Phase O/N ได้ทันที; ดู 8.15)*
 - [x] **P0** วินิจฉัยตอนแตะพื้นด้วยตัวเลข (ระยะ/รัศมีภาพ/รัศมี collider/ขนาดยาน; ผู้ใช้เห็นกรณี 1/2/3) แล้วแก้ถ้าไม่ตรงกัน — งาน: `docs/agent-tasks/T7-planet-surface-p1.md`
 - [~] **P1** detail layer (shader) + วัตถุบนพื้นแบบ instanced deterministic + ฝุ่น/สั่นตอนแตะ + **ดาวแก๊สลงจอดไม่ได้**
-- [ ] **P1.5** ขาลงจอดพื้นฐาน (T12): กาง/ยุบ/`landed` เมื่อขาแตะ/ปุ่ม `G`/autopilot ผูกความสูงขา
+- [x] **P1.5** ขาลงจอดพื้นฐาน (T12 — merge แล้ว, ตรวจในเบราว์เซอร์: landed ที่ 2.0 u นิ่ง ไม่ตกต่อ): กาง/ยุบ/`landed` เมื่อขาแตะ/ปุ่ม `G`/autopilot ผูกความสูงขา
 - [ ] **P2** ผิวตามประเภท/สภาพแวดล้อมจริงของดาว (หลัง Phase O ข) · ขาลงจอด
 - [ ] **P3** *(ภายหลัง/เสี่ยง)* ภูมิประเทศจริง (heightfield/LOD + collider ที่ตรงกับภาพ), ลูกเรือเดินบนผิวดาว
 
