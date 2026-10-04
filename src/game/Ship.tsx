@@ -52,6 +52,7 @@ import { construction, dockInfo, dockRequests, getDock } from './dock'
 import { useDocking } from './docking'
 import { PendingBlock } from './Holograms'
 import { getSector } from './sector'
+import { obstaclesFor } from './pathPlanner'
 import { canRemove, pickRemovable } from './shipGraph'
 import { stationPose } from './station'
 
@@ -555,6 +556,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
         harvestRange: currentHarvester().range,
         scanRange: HARVEST_SCAN_RANGE * currentSpecies().scanRange,
         hull: gameStats.hull,
+        obstacles: obstaclesFor(getSector()),
       }
 
       let out

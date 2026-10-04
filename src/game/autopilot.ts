@@ -14,6 +14,7 @@ import {
   type AutopilotTask,
   type CelestialBody,
 } from './gameState'
+import { planPath, type Obstacle, type PlannedPath } from './pathPlanner'
 import { scrapRegistry, type TargetState } from './targets'
 
 /** Max angular acceleration the auto-pilot asks for, matching the manual controls (rad/s²). */
@@ -63,6 +64,13 @@ const HOLD_KD = 1.2
 const EVAC_HULL = 35
 const EVAC_THREATS = 2
 
+// Path planning: the route is replanned about once a second and flown waypoint by waypoint
+const PLAN_INTERVAL = 1
+const WAYPOINT_REACH = 15 // distance at which the next waypoint becomes the aim
+const WAYPOINT_SPEED = 25 // speed to carry through a waypoint that is not the end of the route
+const ROUTE_STALE_DISTANCE = 150 // the ship is this far from where the route was planned: start over (fold, teleport)
+const GOAL_MOVED = 8
+
 export type AutopilotInput = {
   /** 1 basic, 2 collision avoidance, 3 efficient cruise */
   tier: number
@@ -87,6 +95,8 @@ export type AutopilotInput = {
   /** How far the auto-pilot looks for scrap (a Floran sees further) */
   scanRange: number
   hull: number
+  /** What to steer round (see `obstaclesFor`); left out, the auto-pilot flies straight */
+  obstacles?: readonly Obstacle[]
 }
 
 export type AutopilotOutput = {
@@ -208,6 +218,84 @@ function avoidMeteors(input: AutopilotInput, out: AutopilotOutput): number {
   return threats
 }
 
+// ---------- Route planning ----------
+
+const NO_OBSTACLES: readonly Obstacle[] = []
+const route = {
+  obstacles: NO_OBSTACLES,
+  goal: new THREE.Vector3(),
+  from: new THREE.Vector3(),
+  age: Infinity,
+  path: null as PlannedPath | null,
+  index: 0,
+}
+
+type Leg = { point: THREE.Vector3; final: boolean; around: string; blocked: boolean; reason: string }
+const leg: Leg = { point: new THREE.Vector3(), final: true, around: '', blocked: false, reason: '' }
+
+/**
+ * Which point to fly at on the way to `goal`: the goal itself when nothing is in the way, otherwise the next
+ * waypoint of the planned route. The plan is cached and redone about once a second, or when the goal, the
+ * obstacles or the ship's place change a lot.
+ */
+function nextLeg(input: AutopilotInput, goal: THREE.Vector3): Leg {
+  const obstacles = input.obstacles ?? NO_OBSTACLES
+  leg.final = true
+  leg.blocked = false
+  leg.around = ''
+  leg.point = goal
+  if (obstacles.length === 0) return leg
+
+  route.age += input.dt
+  const stale =
+    route.path === null ||
+    route.obstacles !== obstacles ||
+    route.age >= PLAN_INTERVAL ||
+    route.goal.distanceToSquared(goal) > GOAL_MOVED ** 2 ||
+    route.from.distanceToSquared(input.position) > ROUTE_STALE_DISTANCE ** 2
+  if (stale) {
+    route.path = planPath(input.position, goal, obstacles)
+    route.obstacles = obstacles
+    route.goal.copy(goal)
+    route.from.copy(input.position)
+    route.index = 0
+    route.age = 0
+  }
+
+  const path = route.path
+  if (!path) return leg
+  if (path.blocked) {
+    leg.blocked = true
+    leg.reason = path.reason ?? 'no route'
+    return leg
+  }
+  const last = path.waypoints.length - 1
+  while (route.index < last && input.position.distanceTo(path.waypoints[route.index]) < WAYPOINT_REACH) route.index++
+  if (route.index < last) {
+    leg.final = false
+    leg.point = path.waypoints[route.index]
+    leg.around = path.around[route.index]
+  }
+  return leg
+}
+
+/** No safe route: stand still (cancel drift and gravity) and say why. */
+function holdStill(input: AutopilotInput, out: AutopilotOutput, reason: string) {
+  stopRotation(input, out)
+  out.maneuverAccel.copy(input.gravity).multiplyScalar(-1).addScaledVector(input.velocity, -HOLD_KD)
+  clampLength(out.maneuverAccel, AP_THRUST_ACCEL)
+  out.throttle = 0
+  out.status = `Path blocked: ${reason}`
+}
+
+/** Flies at a waypoint that is not the end of the route; the distance reported stays the one to the real goal. */
+function flyThrough(input: AutopilotInput, out: AutopilotOutput, point: THREE.Vector3, goal: THREE.Vector3, dodging: boolean) {
+  flyTo(input, out, point, 0, WAYPOINT_SPEED, dodging)
+  out.distance = goal.distanceTo(input.position)
+}
+
+const detourStatus = (around: string) => (around ? `Detouring around ${around}` : 'Detouring')
+
 // ---------- Flying to a point ----------
 
 /**
@@ -277,6 +365,20 @@ function navTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutput {
   const dodging = input.tier >= 2 && avoidMeteors(input, out) > 0
   v.spot.set(...body.position)
   const influence = body.wellRadius * INFLUENCE_FRACTION
+
+  // Outside the planet's sphere of influence the route may detour round things; inside it the arrival logic takes over
+  if (v.spot.distanceTo(input.position) > influence) {
+    const step = nextLeg(input, v.spot)
+    if (step.blocked) {
+      holdStill(input, out, step.reason)
+      return out
+    }
+    if (!step.final) {
+      flyThrough(input, out, step.point, v.spot, dodging)
+      out.status = dodging ? 'Evading meteor' : detourStatus(step.around)
+      return out
+    }
+  }
   const { remaining, braking, angle } = flyTo(input, out, v.spot, influence, INFLUENCE_ARRIVAL_SPEED, dodging)
 
   if (remaining <= 0) {
@@ -464,6 +566,16 @@ function harvestTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutp
 
   // Stop inside beam range, then hold there while the harvester reels it in
   const stop = input.harvestRange * 0.6
+  const step = nextLeg(input, pickup.position)
+  if (step.blocked) {
+    holdStill(input, out, step.reason)
+    return out
+  }
+  if (!step.final) {
+    flyThrough(input, out, step.point, pickup.position, dodging)
+    out.status = dodging ? 'Evading meteor' : detourStatus(step.around)
+    return out
+  }
   const { remaining } = flyTo(input, out, pickup.position, stop, 0, dodging, true)
   out.status = dodging
     ? 'Evading meteor'
@@ -536,10 +648,18 @@ function dockTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutput 
     return out
   }
   const dodging = input.tier >= 2 && avoidMeteors(input, out) > 0
-  flyTo(input, out, target.position, 20, 8, dodging)
+  const step = nextLeg(input, target.position)
+  if (step.blocked) {
+    holdStill(input, out, step.reason)
+    return out
+  }
+  if (step.final) flyTo(input, out, target.position, 20, 8, dodging)
+  else flyThrough(input, out, step.point, target.position, dodging)
   if (dockInfo.canDock) {
     out.requestDock = true
     out.status = 'Dock: requesting clearance'
+  } else if (!step.final) {
+    out.status = dodging ? 'Evading meteor' : detourStatus(step.around)
   } else {
     out.status = dodging ? 'Evading meteor' : `Dock: approaching (${out.distance.toFixed(0)} u)`
   }
