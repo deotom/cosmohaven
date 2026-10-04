@@ -3,7 +3,7 @@
 สถานะ: **Design / ยังไม่เริ่มทำโค้ด**
 
 > **หมายเหตุเรื่องเศรษฐกิจ (ตรวจกับโค้ด 2026-10-04):** ปัจจุบันสกุลเงินในเกมคือ **HC (credits)** ส่วน **Scrap เป็นสินค้าใน cargo** ที่ขายเป็น HC (20 ต่อชิ้น ที่ drydock) มี Survey Data (50) และ Relic เป็น cargo ด้วย; cargo มีความจุ 8 หน่วย (ขยายด้วย storage tech); ราคาต่าง ๆ ปรับตามระดับความยาก; มีบล็อกเพิ่มคือ engine/shield/repair เอกสารนี้เขียนก่อนตรวจเรื่องนี้ จึงยังใช้คำว่า "Scrap" ในหลายจุดที่ความหมายคือ "เงิน" — **ให้อ่านเป็น HC** (ราคา/ต้นทุน) เมื่อลงมือทำจริง และอัปเดตข้อความให้ตรงตอนเริ่มเฟสนั้น
-เรื่องราว/lore: [STORY.md](STORY.md) · เอกสารแม่: [GAME_DESIGN.md](GAME_DESIGN.md) · เช็กลิสต์หลัก: [PLAN.md](PLAN.md) (ไฟล์นี้แยกต่างหากเพื่อไม่ชนกับงานที่แก้ PLAN.md อยู่)
+ส่งมอบ: [HANDOFF.md](HANDOFF.md) · งานสำหรับ agent: [agent-tasks/README.md](agent-tasks/README.md) · เรื่องราว/lore: [STORY.md](STORY.md) · เอกสารแม่: [GAME_DESIGN.md](GAME_DESIGN.md) · เช็กลิสต์หลัก: [PLAN.md](PLAN.md) (ไฟล์นี้แยกต่างหากเพื่อไม่ชนกับงานที่แก้ PLAN.md อยู่)
 
 ## 0. เป้าหมายและแรงบันดาลใจ
 
@@ -476,7 +476,7 @@ type SaveGame     = { schemaVersion; ships: ShipInstance[]; crew: CrewInstance[]
 - [ ] Utility AI เวอร์ชันย่อ + self-care ขั้นพื้นฐาน (3.4.1) ทำงานบนยานตัวอย่าง 1 ลำ (ยังไม่ต้องมี builder ใหม่)
 - [ ] เหตุการณ์สุ่ม 2–3 แบบ (ดูข้อ 8.1) เพื่อทดสอบว่ามีแรงตึงเครียดพอ
 - [ ] แผงสรุปทีมแบบเรียบ ๆ (ดูข้อ 8.2)
-- [x] **S0 (8.7)** — ชั้นบริการสถานี + Contracts Board (ทำแล้วบน branch `feature/station-services` ยังไม่ merge; build/lint/test 78 ผ่าน + ตรวจใน browser แล้ว 2026-10-04)
+- [x] **S0 (8.7)** — ชั้นบริการสถานี + Contracts Board (merge เข้า master ในเครื่องแล้ว ยังไม่ push; ตรวจใน browser แล้ว 2026-10-04)
   - [x] `StationSpec.services` (ไม่ระบุ = ครบทุกบริการ) + `dockedHasService()` (`src/game/services.ts`)
   - [x] Contracts Board: บอร์ดต่อสถานีที่สร้างจาก (ชื่อสถานี, round) แบบ deterministic, รับได้สูงสุด 3 งาน, ส่งของที่สถานีเพื่อรับ HC สูงกว่าราคาขาย (Scrap ×1.4–1.7, Survey Data ×1.8), ส่งสำเร็จแล้วบอร์ดโพสต์งานใหม่ (`src/game/contracts.ts`)
   - [x] หน้า Contracts + ปุ่ม CONTRACTS เมื่อจอดที่สถานี, แสดงงานที่ถืออยู่ใน HUD (ShipPanel)
@@ -494,7 +494,7 @@ type SaveGame     = { schemaVersion; ships: ShipInstance[]; crew: CrewInstance[]
 ### Phase X — HUD & UX Pass (ทำคู่ Phase 0; X1 ก่อนฟีเจอร์ใหม่) — ดู 8.11
 - [x] **UX fix ของ Contracts (บางส่วน):** give up ต้องกดยืนยัน, HAND IN เป็นปุ่มหลัก, งานที่พร้อมส่งมีกรอบเขียว, เช็กลิสต์ fold แสดงเฉพาะเงื่อนไขที่ไม่ผ่าน (2c88b8f; ตรวจใน browser แล้ว 2026-10-04)
 - [x] **X0** audit + wireframe — เสร็จ ([docs/ux/X0-audit.md](ux/X0-audit.md)); ผู้ใช้เลือก **แบบ A, sci-fi ใสลดข้อความ, ใบหน้าลูกเรือแบบ Animal Crossing, ปุ่มช่วยเหลือ `?`**; ยังไม่ได้วัด interior/orbit/ลงจอด/fold/pause/จอแนวตั้ง
-- [x] **X1** quick wins (branch `feature/hud-x1`, ยังไม่ merge; lint/83 tests/build ผ่าน + ตรวจใน browser 2026-10-04):
+- [x] **X1** quick wins (merge เข้า master ในเครื่องแล้ว ยังไม่ push; lint/test/build ผ่าน + ตรวจใน browser 2026-10-04):
   - [x] รายการปุ่มกดย้ายไปหลัง `?` (overlay + ปุ่ม HELP [?]) · [x] ShipPanel/SystemsPanel/CrewPanel ย่อ (Systems ย่อ/ขยายได้) · [x] แผงถูกจำกัดไม่ล้นจอ + แถบปุ่มล่างไม่ถูกตัด
   - [x] มาตรวัดความเร็วแบบตัวเลขใน header · [x] toast เมื่อ cargo พอส่งสัญญา · [x] ไม่ขาย cargo ที่สัญญาจองไว้ (แจ้งใน Trade)
   - ผล: บิน 74→19 บรรทัด, ไม่มีแผงทับกันที่ 3 ความละเอียด; **ยังไม่ถึง ≤ ~12 บรรทัด** (ดู X3)
@@ -525,7 +525,7 @@ type SaveGame     = { schemaVersion; ships: ShipInstance[]; crew: CrewInstance[]
 - [ ] hash64 + `sectorAt(galaxyCoords, sectorCoords)` แทน seed สุ่ม; `generatorVersion`
 - [ ] Galaxy Profile (รวม **ระดับความปลอดภัย (security — 8.12)**, **ระดับ Fade**) + preview ราคาถูกของ sector
 - [ ] Fold เลือกปลายทางได้ + ต้นทุนตามระยะ; Home Anchor
-- [~] **Space-Fold spec (8.5)** — งานเล็กทำแล้วบน branch `feature/fold-spec` (ยังไม่ merge; ตรวจ build/lint/test + ใน browser แล้ว 2026-10-04); ที่เหลือรอ Phase U
+- [~] **Space-Fold spec (8.5)** — งานเล็กทำแล้ว (merge เข้า master ในเครื่องแล้ว ยังไม่ push; ตรวจ build/lint/test + ใน browser แล้ว 2026-10-04); ที่เหลือรอ Phase U
   - [x] เช็กลิสต์เงื่อนไขก่อน fold บน HUD (Undocked / พ้นบรรยากาศ / พ้นหลุมลึก / HC พอ)
   - [x] ห้ามเริ่มชาร์จในบรรยากาศหรือหลุมแรงโน้มถ่วงลึก (ใน 75% ของรัศมี well)
   - [x] ยกเลิกระหว่างชาร์จด้วย `J` อีกครั้ง คืน 80% ของค่าธรรมเนียม

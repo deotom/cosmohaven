@@ -1,0 +1,42 @@
+# Agent task queue
+
+งานที่ **เตรียมให้ agent อื่นทำ** โดยตัดเป็นก้อนเล็ก มีขอบเขตไฟล์ชัด และมีเกณฑ์ตรวจที่วัดได้
+ผู้ประสานงาน (lead) คือ Claude ใน session หลัก — ดู [../HANDOFF.md](../HANDOFF.md) สำหรับสถานะโปรเจกต์ ณ วันที่ส่งมอบ
+
+## วิธีใช้ (ย่อ)
+1. เลือกงานจากตารางด้านล่าง (ดูคอลัมน์ "ทำคู่กันได้ไหม" ก่อนเปิดหลาย agent พร้อมกัน)
+2. ให้ agent อ่าน **[../../AGENTS.md](../../AGENTS.md)** ก่อน แล้วอ่านไฟล์งานของตัวเอง
+3. ใช้ prompt ด้านล่าง (เปลี่ยนแค่ชื่อไฟล์งาน)
+4. เมื่อ agent ส่งงาน ให้ lead ตรวจตาม "เกณฑ์ผ่าน" ของไฟล์งานนั้น + รัน `npm run lint && npm test && npm run build` เอง ก่อน merge
+
+### Prompt มาตรฐาน (ก๊อปไปวางได้เลย)
+```
+คุณทำงานในโปรเจกต์ CosmoHaven (C:\\cosmohaven)
+1) อ่าน AGENTS.md (กฎของโค้ดและการทำงานร่วมกัน) ให้จบก่อน
+2) อ่าน docs/HANDOFF.md ส่วน "ข้อควรระวัง" และ "สิ่งที่ยังไม่ได้ตรวจ"
+3) ทำงานตามไฟล์ docs/agent-tasks/<ชื่อไฟล์งาน>.md เท่านั้น — ทำเฉพาะขอบเขตที่ระบุ
+   ห้ามแก้ไฟล์นอก "ไฟล์ที่แตะได้" และห้ามทำสิ่งที่ระบุใน "นอกขอบเขต"
+4) ก่อนเริ่ม: git status, git log -5; สร้าง branch ตามที่ไฟล์งานระบุ จาก master ล่าสุด
+5) ห้าม push, ห้ามแตะ master/main, ห้ามแก้ docs/PLAN.md และ docs/GAME_DESIGN.md
+6) เสร็จเมื่อ: lint + test + build ผ่าน, เกณฑ์ผ่านทุกข้อในไฟล์งานครบ, เขียน log ที่ docs/agent-log/<ชื่องาน>.md
+7) รายงานตอนจบตรงไปตรงมา: แก้ไฟล์ไหน, รันอะไรได้ผลอย่างไร, อะไร "ไม่ได้ตรวจ", ข้อสมมติที่ตั้งเอง,
+   ปัญหาที่พบแต่ไม่ได้แก้ ถ้า test ไม่ผ่านให้แนบผลลัพธ์ อย่าอ้างว่าใช้ได้เพียงเพราะ type-check ผ่าน
+```
+
+## ตารางงาน
+
+| ID | งาน | Branch | แผนอ้างอิง | ไฟล์หลักที่แตะ | ขึ้นกับ | ทำคู่กันได้ไหม |
+|---|---|---|---|---|---|---|
+| [T1](T1-autopilot-obstacle-avoidance.md) | Autopilot หลบสิ่งกีดขวาง (V1) | `feature/autopilot-avoidance` | 8.14 ค | `src/game/pathPlanner.ts` (ใหม่), `autopilot.ts`, `Ship.tsx` (ส่ง obstacles) | — | ✅ กับ T2, T3 |
+| [T2](T2-audio-foundation.md) | ระบบเสียงพื้นฐาน (S1) | `feature/audio-s1` | 8.14 จ | `src/audio/**` (ใหม่), `PauseMenu.tsx`, `App.tsx` (เล็กน้อย) | — | ✅ กับ T1; ⚠️ แก้ `App.tsx` น้อยที่สุดเพราะ T3 ก็แตะ |
+| [T3](T3-radar-speed-gauge.md) | เรดาร์ + มาตรวัดความเร็ว (X2a) | `feature/hud-radar` | 8.11 ค, ux/X0-audit.md | `src/hud/Radar.tsx`, `radarMath.ts` (ใหม่), `App.tsx` (วางตำแหน่ง) | — | ✅ กับ T1; ⚠️ `App.tsx` ร่วมกับ T2 |
+| [T4](T4-milestones.md) | Milestones (Phase 0 ที่เหลือ) | `feature/milestones` | 8.1.1, Phase 0 | `src/game/milestones.ts` (ใหม่), `gameState.ts`, `saveGame.ts`, `HelpOverlay.tsx` | — | ❌ ไม่ทำพร้อม T5 (ชน `saveGame.ts`) |
+| [T5](T5-deterministic-sector-addressing.md) | พิกัด sector แบบ deterministic | `feature/sector-addressing` | 8.4, Phase U | `fold.ts`, `sector.ts`, `saveGame.ts`, `gameState.ts` | — | ❌ ทำ **คนเดียว** หลังรวม T4 แล้ว |
+
+**ลำดับที่แนะนำ:** T1 + T3 (+ T2) พร้อมกันได้ → รวมเข้า master → T4 → T5
+**ห้ามเปิดพร้อมกัน:** T4 กับ T5 (ทั้งคู่เพิ่มฟิลด์ใน `saveGame.ts` และ `gameState.ts`)
+
+## ข้อมูลที่ lead ต้องรู้เมื่อรับงานกลับ
+- รันตรวจเอง: `npm run lint && npm test && npm run build` และดู diff ด้วย `git diff master...<branch>`
+- งานที่มี UI ให้ดูภาพจริง: สคริปต์ [../ux/ux-audit.mjs](../ux/ux-audit.mjs) (ต้องมี dev server + `puppeteer-core`; ไม่ใช่ dependency ของโปรเจกต์ — ติดตั้งนอกรีโป)
+- คุณภาพ "ความรู้สึก" (กล้อง เสียง ความถูกใจของเรดาร์) agent ตรวจไม่ได้ — ต้องให้ผู้ใช้ลองเล่น

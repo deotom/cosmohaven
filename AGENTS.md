@@ -12,6 +12,12 @@ CosmoHaven is a 3D space sim in the browser: Vite + React 19 + TypeScript, @reac
 | `docs/PLAN_CREW_AND_SHIPS.md` | The forward plan. **Read only the section your task names** (it is long) and keep its checklist current |
 | `docs/PLAN.md` | Older checklist, maintained by someone else: do not edit |
 
+## Handoff and task queue
+
+- `docs/HANDOFF.md` — repo state, what is verified and what is **not**, open decisions, pitfalls
+- `docs/agent-tasks/` — self-contained tasks with file scope, acceptance criteria and a standard prompt; check the
+  table there for which tasks may run in parallel before starting one
+
 ## Commands
 
 ```sh
