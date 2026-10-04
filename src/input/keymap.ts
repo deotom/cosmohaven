@@ -13,6 +13,7 @@ import { controlLabel, getControlCode, type ControlId } from './preferences'
 type BindingMode = GameMode | 'all'
 type KeyAction =
   | 'help'
+  | 'orbitFollow'
   | 'message'
   | 'dock'
   | 'interior'
@@ -59,6 +60,7 @@ export const KEY_BINDINGS: readonly Binding[] = [
   { code: 'KeyI', key: 'I', mode: 'all', action: 'upgradeAutopilot', hint: 'Upgrade Auto-Pilot', control: 'upgradeAutopilot' },
   { code: 'KeyN', key: 'N', mode: 'all', action: 'waypoint', hint: 'Next waypoint', control: 'waypoint' },
   { code: 'KeyC', key: 'C', mode: 'pilot', action: 'camera', hint: 'Cycle camera: chase / ship-locked / orbit', control: 'camera' },
+  { code: 'KeyX', key: 'X', mode: 'pilot', action: 'orbitFollow', hint: 'Orbit camera: turn with the ship on / off' },
   { code: 'KeyF', key: 'F', mode: 'pilot', action: 'flight', hint: 'Hold to harvest Scrap', flight: true, control: 'harvest' },
   { code: 'KeyP', key: 'P', mode: 'pilot', action: 'autopilot', hint: 'Toggle Auto-Pilot', shift: false, unavailableAfterVictory: true, control: 'autopilot' },
   { code: 'KeyP', key: 'Shift+P', mode: 'pilot', action: 'taskCycle', hint: 'Cycle Auto-Pilot task', shift: true, unavailableAfterVictory: true, control: 'autopilot' },
@@ -118,6 +120,7 @@ type KeymapContext = {
   setCameraView: Dispatch<SetStateAction<CameraView>>
   setSelectedType: Dispatch<SetStateAction<PlaceableBlockType>>
   toggleHelp: () => void
+  toggleOrbitFollow: () => void
 }
 
 export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
@@ -134,6 +137,9 @@ export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
   switch (binding.action) {
     case 'help':
       context.toggleHelp()
+      break
+    case 'orbitFollow':
+      context.toggleOrbitFollow()
       break
     case 'message':
       notify('Ships can only be modified while docked at a drydock', 'warning', 3000)

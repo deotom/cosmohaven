@@ -8,6 +8,8 @@ import {
   followCameraOrientation,
   followCameraPosition,
   followFrameFromCamera,
+  freeOrbitUp,
+  rotateOrbitWithShip,
 } from './followCamera'
 
 const randomQuaternion = (rand: () => number) =>
@@ -150,5 +152,68 @@ describe('camera view cycle', () => {
     expect(isFollowView('locked')).toBe(true)
     expect(isFollowView('orbit')).toBe(false)
     expect(CAMERA_VIEW_LABELS.locked).toBe('SHIP-LOCKED')
+  })
+})
+
+describe('orbit view that follows the ship', () => {
+  it('keeps the camera fixed in the ship frame while the ship turns and moves', () => {
+    const rand = mulberry32(23)
+    const previous = new THREE.Quaternion()
+    const focus = new THREE.Vector3(10, -4, 25)
+    const position = new THREE.Vector3(14, 3, 40)
+    const quaternion = randomQuaternion(rand)
+    for (let i = 0; i < 100; i++) {
+      const current = randomQuaternion(rand)
+      // The camera's place and orientation expressed in the ship's frame before and after
+      const inverseBefore = previous.clone().invert()
+      const localOffsetBefore = position.clone().sub(focus).applyQuaternion(inverseBefore)
+      const localOrientationBefore = inverseBefore.clone().multiply(quaternion)
+
+      rotateOrbitWithShip(previous, current, focus, position, quaternion)
+
+      const inverseAfter = current.clone().invert()
+      expect(position.clone().sub(focus).applyQuaternion(inverseAfter).distanceTo(localOffsetBefore)).toBeLessThan(1e-6)
+      expect(angleBetween(inverseAfter.clone().multiply(quaternion), localOrientationBefore)).toBeLessThan(1e-6)
+      previous.copy(current)
+    }
+  })
+
+  it('does nothing while the ship holds still', () => {
+    const ship = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), 1.1)
+    const focus = new THREE.Vector3(1, 2, 3)
+    const position = new THREE.Vector3(5, 6, 7)
+    const quaternion = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), 0.4)
+    const before = { position: position.clone(), quaternion: quaternion.clone() }
+    rotateOrbitWithShip(ship, ship, focus, position, quaternion)
+    expect(position.distanceTo(before.position)).toBeLessThan(1e-9)
+    expect(angleBetween(quaternion, before.quaternion)).toBeLessThan(1e-9)
+  })
+
+  it('keeps the distance to the ship however it turns', () => {
+    const rand = mulberry32(5)
+    const focus = new THREE.Vector3(0, 0, 0)
+    const position = new THREE.Vector3(0, 6, 20)
+    const quaternion = new THREE.Quaternion()
+    const distance = position.distanceTo(focus)
+    let previous = new THREE.Quaternion()
+    for (let i = 0; i < 200; i++) {
+      const current = randomQuaternion(rand)
+      rotateOrbitWithShip(previous, current, focus, position, quaternion)
+      previous = current
+      expect(Math.abs(position.distanceTo(focus) - distance)).toBeLessThan(1e-6)
+    }
+  })
+
+  it('free orbit takes the camera up as its own axis, so there is no pole to stop at', () => {
+    const rand = mulberry32(31)
+    const up = new THREE.Vector3()
+    for (let i = 0; i < 100; i++) {
+      const camera = randomQuaternion(rand)
+      freeOrbitUp(camera, up)
+      // Looking straight up or straight down, the new up is still perpendicular to the view direction
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(camera)
+      expect(Math.abs(up.dot(forward))).toBeLessThan(1e-9)
+      expect(Math.abs(up.length() - 1)).toBeLessThan(1e-9)
+    }
   })
 })

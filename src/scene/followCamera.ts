@@ -36,3 +36,31 @@ export function followCameraOrientation(frame: THREE.Quaternion, out: THREE.Quat
 export function followFrameFromCamera(cameraQuaternion: THREE.Quaternion, out: THREE.Quaternion) {
   return out.copy(cameraQuaternion).multiply(FOLLOW_TILT_INVERSE).normalize()
 }
+
+const rotationScratch = new THREE.Quaternion()
+const offsetScratch = new THREE.Vector3()
+
+/**
+ * Orbit view that turns with the ship: when the ship rotates from `previous` to `current`, swing the camera round the
+ * focus by the same rotation (position and orientation), so the view of the ship stays exactly as the player set it.
+ */
+export function rotateOrbitWithShip(
+  previous: THREE.Quaternion,
+  current: THREE.Quaternion,
+  focus: THREE.Vector3,
+  cameraPosition: THREE.Vector3,
+  cameraQuaternion: THREE.Quaternion,
+) {
+  rotationScratch.copy(previous).invert().premultiply(current)
+  offsetScratch.copy(cameraPosition).sub(focus).applyQuaternion(rotationScratch)
+  cameraPosition.copy(focus).add(offsetScratch)
+  cameraQuaternion.premultiply(rotationScratch).normalize()
+}
+
+/**
+ * The free orbit has no poles: taking the camera's own "up" as the orbit axis every frame means the controls never
+ * reach a pole to stop at, so the view can be turned to any angle, over the top and underneath.
+ */
+export function freeOrbitUp(cameraQuaternion: THREE.Quaternion, out: THREE.Vector3) {
+  return out.set(0, 1, 0).applyQuaternion(cameraQuaternion)
+}

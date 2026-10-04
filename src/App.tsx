@@ -159,6 +159,7 @@ export default function App() {
   const [tradeOpen, setTradeOpen] = useState(false)
   const [contractsOpen, setContractsOpen] = useState(false)
   const [helpOpen, setHelpOpen] = useState(false)
+  const [orbitFollow, setOrbitFollow] = useState(false)
   const [victory, setVictory] = useState(false)
   // Physics keeps running briefly after victory so the ship (now heavily damped) glides to a stop
   const [frozen, setFrozen] = useState(false)
@@ -297,7 +298,7 @@ export default function App() {
         return
       }
       if (paused) return
-      handleGameKey(event, { started, mode, victory, setInterior, setCameraView, setSelectedType, toggleHelp: () => setHelpOpen((open) => !open) })
+      handleGameKey(event, { started, mode, victory, setInterior, setCameraView, setSelectedType, toggleHelp: () => setHelpOpen((open) => !open), toggleOrbitFollow: () => setOrbitFollow((on) => !on) })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -326,6 +327,7 @@ export default function App() {
             selectedType={selectedType}
             mode={mode}
             cameraView={cameraView}
+            orbitFollow={orbitFollow}
             interior={interior}
             docked={mode === 'build'}
             paused={paused || frozen || tutorialOpen}
@@ -388,6 +390,11 @@ export default function App() {
         {mode === 'pilot' && !interior && (
           <div role="button" onClick={toggleCameraView} style={buttonStyle}>
             CAMERA: {CAMERA_VIEW_LABELS[cameraView]} [C]
+          </div>
+        )}
+        {mode === 'pilot' && !interior && cameraView === 'orbit' && (
+          <div role="button" onClick={() => setOrbitFollow((on) => !on)} style={buttonStyle}>
+            ORBIT FOLLOW: {orbitFollow ? 'ON' : 'OFF'} [X]
           </div>
         )}
       </div>

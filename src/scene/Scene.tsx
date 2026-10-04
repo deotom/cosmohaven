@@ -21,7 +21,7 @@ import { useSector } from '../game/sector'
 import { Planet } from '../game/Planet'
 import { ScrapField } from '../game/ScrapField'
 import { isFollowView, type CameraView, type GameMode, type PlaceableBlockType } from '../game/types'
-import { advanceFollowFrame, followCameraOrientation, followCameraPosition, followFrameFromCamera } from './followCamera'
+import { advanceFollowFrame, followCameraOrientation, followCameraPosition, followFrameFromCamera, freeOrbitUp, rotateOrbitWithShip } from './followCamera'
 
 type ControlsLike = { target: THREE.Vector3 }
 
@@ -51,6 +51,10 @@ type CameraRigProps = {
   chasing: boolean
   /** With `chasing`: fix the camera rigidly to the ship so it rolls and flips exactly with it */
   locked: boolean
+  /** Pilot orbit view: no poles, so the camera can be turned to any angle */
+  freeOrbit: boolean
+  /** With `freeOrbit`: the orbit view turns with the ship */
+  orbitFollow: boolean
   /** Interior view: the orbit camera is centred on the crew member instead of the ship */
   interior: boolean
   /** Docked in a drydock: the camera snaps to the assembly view inside the hangar */
@@ -65,12 +69,15 @@ type CameraRigProps = {
  * camera and it rides along with the ship, keeping their angle and zoom.
  * Chase (pilot mode): a smoothed third-person camera behind the ship that rolls with it.
  */
-function CameraRig({ chasing, locked, interior, docked, position, quaternion, crewWorld }: CameraRigProps) {
+function CameraRig({ chasing, locked, freeOrbit, orbitFollow, interior, docked, position, quaternion, crewWorld }: CameraRigProps) {
   const controls = useThree((s) => s.controls) as unknown as ControlsLike | null
   const camera = useThree((s) => s.camera)
   const scratch = useMemo(() => new THREE.Vector3(), [])
   const followFrame = useMemo(() => new THREE.Quaternion(), [])
   const wasChasing = useRef(false)
+  const previousShipQuaternion = useMemo(() => new THREE.Quaternion(), [])
+  const wasOrbitFollowing = useRef(false)
+  const upScratch = useMemo(() => new THREE.Vector3(), [])
   const wasInterior = useRef(false)
   const wasDocked = useRef(false)
 
@@ -113,14 +120,25 @@ function CameraRig({ chasing, locked, interior, docked, position, quaternion, cr
       // Re-entry rattles the camera
       if (shipState.heat > 0.05) shakeCamera(camera, shipState.heat * 0.18)
     } else {
-      // The orbit controls assume a world-up camera, so ease back to it after chasing
-      camera.up.lerp(WORLD_UP, 1 - Math.exp(-8 * step)).normalize()
+      // Ride along with the ship's movement, keeping the player's angle and zoom
       scratch.copy(focus).sub(controls.target)
       camera.position.add(scratch)
+      if (freeOrbit) {
+        if (orbitFollow) {
+          if (!wasOrbitFollowing.current) previousShipQuaternion.copy(quaternion.current)
+          rotateOrbitWithShip(previousShipQuaternion, quaternion.current, focus, camera.position, camera.quaternion)
+        }
+        previousShipQuaternion.copy(quaternion.current)
+        camera.up.copy(freeOrbitUp(camera.quaternion, upScratch))
+      } else {
+        // Build and interior views keep the horizon level, so ease back to world-up after chasing
+        camera.up.lerp(WORLD_UP, 1 - Math.exp(-8 * step)).normalize()
+      }
     }
     // Keeping the orbit target on the ship (or the crew) makes switching views seamless
     controls.target.copy(focus)
     wasChasing.current = chasing
+    wasOrbitFollowing.current = freeOrbit && orbitFollow
   })
 
   return null
@@ -138,6 +156,8 @@ type SceneProps = {
   selectedType: PlaceableBlockType
   mode: GameMode
   cameraView: CameraView
+  /** Orbit view turns with the ship */
+  orbitFollow: boolean
   /** Interior view: watch the crew from inside the ship */
   interior: boolean
   docked: boolean
@@ -146,8 +166,9 @@ type SceneProps = {
   onVictory: () => void
 }
 
-export default function Scene({ onBlockCountChange, selectedType, mode, cameraView, interior, docked, paused, onVictory }: SceneProps) {
+export default function Scene({ onBlockCountChange, selectedType, mode, cameraView, orbitFollow, interior, docked, paused, onVictory }: SceneProps) {
   const chasing = mode === 'pilot' && isFollowView(cameraView) && !interior
+  const freeOrbit = mode === 'pilot' && cameraView === 'orbit' && !interior
   const shipPosition = useRef(new THREE.Vector3())
   const shipQuaternion = useRef(new THREE.Quaternion())
   const crewWorld = useRef(new THREE.Vector3())
@@ -221,7 +242,7 @@ export default function Scene({ onBlockCountChange, selectedType, mode, cameraVi
       />
       <TargetTracker shipPosition={shipPosition} />
       <ReentryEffects shipPosition={shipPosition} />
-      <CameraRig chasing={chasing} locked={cameraView === 'locked'} interior={interior} docked={docked} position={shipPosition} quaternion={shipQuaternion} crewWorld={crewWorld} />
+      <CameraRig chasing={chasing} locked={cameraView === 'locked'} freeOrbit={freeOrbit} orbitFollow={orbitFollow} interior={interior} docked={docked} position={shipPosition} quaternion={shipQuaternion} crewWorld={crewWorld} />
       <Effects />
     </>
   )
