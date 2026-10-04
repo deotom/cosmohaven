@@ -32,10 +32,13 @@
 | [T3](T3-radar-speed-gauge.md) | เรดาร์ + มาตรวัดความเร็ว (X2a) | `feature/hud-radar` | 8.11 ค, ux/X0-audit.md | `src/hud/Radar.tsx`, `radarMath.ts` (ใหม่), `App.tsx` (วางตำแหน่ง) | — | ✅ กับ T1; ⚠️ `App.tsx` ร่วมกับ T2 |
 | [T4](T4-milestones.md) | Milestones (Phase 0 ที่เหลือ) | `feature/milestones` | 8.1.1, Phase 0 | `src/game/milestones.ts` (ใหม่), `gameState.ts`, `saveGame.ts`, `HelpOverlay.tsx` | — | ❌ ไม่ทำพร้อม T5 (ชน `saveGame.ts`) |
 | [T5](T5-deterministic-sector-addressing.md) | พิกัด sector แบบ deterministic | `feature/sector-addressing` | 8.4, Phase U | `fold.ts`, `sector.ts`, `saveGame.ts`, `gameState.ts` | — | ❌ ทำ **คนเดียว** หลังรวม T4 แล้ว |
+| [T6](T6-autopilot-followups.md) | ติดตามผล T1: harvest ข้ามเศษเข้าไม่ได้ + benchmark planner | `feature/autopilot-followups` | 8.14 ค, log T1 | `autopilot.ts`, `pathPlanner.ts`, สคริปต์ benchmark | T1 ✅ | ✅ กับ T2/T3; ❌ กับ T7 ถ้าแก้ `Ship.tsx` |
+| [T7](T7-planet-surface-p1.md) | ผิวดาว/ลงจอด P0–P1 (วินิจฉัย + detail + props + ฝุ่น + ดาวแก๊สไม่ลงจอด) | `feature/planet-surface` | 8.15 | `Planet.tsx`, `Earth.tsx`, `Ship.tsx` (ส่วนแตะพื้น), `ArrivalPanel.tsx`, ไฟล์ใหม่ | — | ✅ กับ T2/T3; ❌ กับ T6 |
 
 **สถานะงาน (อัปเดตโดย lead):**
 - **T1 ✅ เสร็จ — merge เข้า master ในเครื่องแล้ว** (ดู `docs/agent-log/T1-autopilot-avoidance.md` ส่วน Lead review)
-- T2, T3, T4, T5: ยังไม่เริ่ม
+- T2, T3, T4, T5, T6, T7: ยังไม่เริ่ม
+- **ลำดับที่แนะนำตอนนี้:** T7 (ผู้ใช้เจอปัญหาตอนลงจอด) + T3 พร้อมกันได้; T6 หลังจากนั้น
 
 **ลำดับที่แนะนำ:** T1 + T3 (+ T2) พร้อมกันได้ → รวมเข้า master → T4 → T5
 **ห้ามเปิดพร้อมกัน:** T4 กับ T5 (ทั้งคู่เพิ่มฟิลด์ใน `saveGame.ts` และ `gameState.ts`)
