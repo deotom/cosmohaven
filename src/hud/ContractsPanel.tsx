@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import {
   CONTRACT_LABELS,
   MAX_ACTIVE_CONTRACTS,
@@ -30,6 +31,13 @@ const describe = (contract: Contract) => `${contract.amount} ${CONTRACT_LABELS[c
 /** The station's contracts board: take work, hand in cargo, drop a job. Offers come from the board's current round. */
 export function ContractsPanel({ onClose }: { onClose: () => void }) {
   const game = useSampled(readGameStats)
+  // Dropping a job cannot be undone by the player, so it takes a second press (and the prompt times out)
+  const [confirmDrop, setConfirmDrop] = useState<string | null>(null)
+  useEffect(() => {
+    if (confirmDrop === null) return
+    const timer = setTimeout(() => setConfirmDrop(null), 3000)
+    return () => clearTimeout(timer)
+  }, [confirmDrop])
   const station = dockedStation()
   const board = currentBoard()
   const full = game.contracts.active.length >= MAX_ACTIVE_CONTRACTS
@@ -69,22 +77,39 @@ export function ContractsPanel({ onClose }: { onClose: () => void }) {
       {game.contracts.active.length === 0 && <div style={{ opacity: 0.7 }}>None yet. Take one from the board below.</div>}
       {game.contracts.active.map((contract) => {
         const ready = contractReady(contract)
+        const confirming = confirmDrop === contract.id
         return (
-          <div key={contract.id} style={{ marginTop: 7, padding: '7px 9px', border: '1px solid rgba(160,210,255,0.3)', borderRadius: 5 }}>
+          <div
+            key={contract.id}
+            style={{ marginTop: 7, padding: '7px 9px', border: `1px solid ${ready ? '#4dffb8' : 'rgba(160,210,255,0.3)'}`, borderRadius: 5 }}
+          >
             <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8 }}>
               <strong>Deliver {describe(contract)}</strong>
               <span style={{ color: '#ffd633' }}>{contract.reward} HC</span>
             </div>
             <div style={{ fontSize: 11, opacity: 0.8 }}>
               {contract.client} · hold: {Math.min(contractHave(contract), contract.amount)}/{contract.amount}
+              {ready && <span style={{ color: '#4dffb8' }}> · ready to hand in</span>}
             </div>
-            <div style={{ display: 'flex', gap: 8, marginTop: 6 }}>
-              <div role="button" aria-disabled={!ready} onClick={() => ready && completeContract(contract.id)} style={{ ...actionStyle(ready), flex: 1 }}>
-                HAND IN
-              </div>
-              <div role="button" onClick={() => abandonContract(contract.id)} style={{ ...actionStyle(true, '#ff9a9a'), flex: 0 }}>
-                DROP
-              </div>
+            <div
+              role="button"
+              aria-disabled={!ready}
+              onClick={() => ready && completeContract(contract.id)}
+              style={{ ...actionStyle(ready), marginTop: 6 }}
+            >
+              {ready ? `HAND IN · +${contract.reward} HC` : 'NOT ENOUGH CARGO YET'}
+            </div>
+            <div
+              role="button"
+              onClick={() => {
+                if (confirming) {
+                  abandonContract(contract.id)
+                  setConfirmDrop(null)
+                } else setConfirmDrop(contract.id)
+              }}
+              style={{ marginTop: 8, fontSize: 11, textAlign: 'right', cursor: 'pointer', pointerEvents: 'auto', color: confirming ? '#ff9a9a' : '#8a98a8' }}
+            >
+              {confirming ? 'Press again to give up this contract' : 'give up'}
             </div>
           </div>
         )
