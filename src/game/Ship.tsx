@@ -53,6 +53,7 @@ import { useDocking } from './docking'
 import { PendingBlock } from './Holograms'
 import { getSector } from './sector'
 import { obstaclesFor } from './pathPlanner'
+import { linearDamping } from './damping'
 import { canRemove, pickRemovable } from './shipGraph'
 import { stationPose } from './station'
 
@@ -100,7 +101,7 @@ const INVERT_MOUSE_Y = false // false: mouse up = nose up
 const LINEAR_DAMPING = 0.3
 const WELL_DAMPING = 0 // any drag at all makes orbits spiral into the planet within a lap or two
 /** Extra linear damping while sitting on the ground after a landing, and the altitude below which it applies */
-const LANDED_DAMPING = 0.9
+const LANDED_DAMPING = 0.6
 const LANDED_DAMPING_ALTITUDE = 8
 const VICTORY_DAMPING = 0.9 // per second; a ship at 10 u/s is effectively stopped within ~1.5s
 const ATMOSPHERE_DRAG = 0.35 // extra damping at the surface: terminal fall speed there is about gravity / this
@@ -406,8 +407,14 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
       // After touchdown the ship hopped about for seconds (it rebounded at ~9 u/s): damp it so it settles on the ground
       const groundAltitude = gravity.dominant ? gravity.dominant.distance - gravity.dominant.body.radius : Infinity
       const resting = gameStats.arrival.phase === 'landed' && groundAltitude < LANDED_DAMPING_ALTITUDE
-      const damping =
-        LINEAR_DAMPING + (WELL_DAMPING - LINEAR_DAMPING) * gravity.freedom + ATMOSPHERE_DRAG * gravity.atmosphere + (resting ? LANDED_DAMPING : 0)
+      const damping = linearDamping({
+        base: LINEAR_DAMPING,
+        well: WELL_DAMPING,
+        freedom: gravity.freedom,
+        atmosphereDrag: ATMOSPHERE_DRAG,
+        atmosphere: gravity.atmosphere,
+        landed: resting ? LANDED_DAMPING : 0,
+      })
       if (Math.abs(damping - appliedDamping.current) > 0.005) {
         appliedDamping.current = damping
         api.linearDamping.set(damping)
