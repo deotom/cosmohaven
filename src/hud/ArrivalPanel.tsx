@@ -2,10 +2,12 @@ import type { CSSProperties } from 'react'
 import { CELESTIAL_BODIES, readGameStats, requestArrival } from '../game/gameState'
 import { isLandable } from '../game/surfaceDetail'
 import { useSampled } from './useSampled'
+import { readGear } from '../game/landingGear'
 
 /** The arrival choice, orbital insertion, and landing telemetry, shown while the ship is inside a planet's sphere of influence. */
 export function ArrivalPanel() {
   const game = useSampled(readGameStats, 100)
+  const gear = useSampled(readGear, 100)
   const a = game.arrival
   const body = CELESTIAL_BODIES[a.body]
   if (a.phase === 'none' || !body) return null
@@ -45,6 +47,7 @@ export function ArrivalPanel() {
 
   return (
     <div className="hud-arrival-panel" style={box}>
+      {(a.phase === 'descent' || a.phase === 'landed') && <div style={{ color: '#4dff88', fontSize: 12 }}>GEAR [G] · {gear.progress === 0 ? 'STOWED' : gear.progress < 1 ? 'DEPLOYING / STOWING' : 'DEPLOYED · LOCKED'}</div>}
       {a.phase === 'choice' && (
         <>
           {title(`SPHERE OF INFLUENCE: ${body.name.toUpperCase()}`)}

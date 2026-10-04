@@ -5,6 +5,7 @@ import { gameStats } from './gameState'
 import type { PlanetSpec } from './sector'
 import { shipState } from './shipState'
 import { dustIntensity, TOUCH_SHAKE_SECONDS, touchShake } from './surfaceDetail'
+import { computeGearLayout, gearPose, gearState } from './landingGear'
 
 const PARTICLES = 160
 const LIFE = 1.6 // seconds a grain of dust lasts
@@ -76,7 +77,13 @@ function stepDust(dust: Dust, body: PlanetSpec, dt: number, camera: THREE.Camera
   if (distance < 1e-6) return
   up.multiplyScalar(1 / distance)
   const thrust = gameStats.thrustLevel
-  const intensity = dustIntensity(distance - body.radius, thrust)
+  const landed = gameStats.arrival.phase === 'landed'
+  if (landed && !dust.wasLanded) dust.landedAt = elapsed
+  const touchdown = dust.landedAt >= 0 && elapsed - dust.landedAt < 0.6
+  const intensity = Math.max(dustIntensity(distance - body.radius, thrust), touchdown ? 0.8 : 0)
+  const feet = gearState.progress >= 0.99
+    ? gearPose(computeGearLayout(shipState.blocks), shipState.blocks, shipState.quaternion, up, body.radius).legs
+    : []
 
   // Age and move what is already in the air
   for (let i = 0; i < PARTICLES; i++) {
@@ -100,12 +107,15 @@ function stepDust(dust: Dust, body: PlanetSpec, dt: number, camera: THREE.Camera
       dust.emitted -= 1
       const i = dust.cursor
       dust.cursor = (dust.cursor + 1) % PARTICLES
+      if (feet.length) {
+        ground.copy(shipState.position).sub(new THREE.Vector3(...body.position)).add(feet[i % feet.length].foot).normalize().multiplyScalar(body.radius + 0.1)
+      }
       const angle = Math.random() * Math.PI * 2
       const speed = (2 + Math.random() * 7) * (0.5 + intensity)
       const lift = 0.5 + Math.random() * 2.5
       const x = Math.cos(angle)
       const y = Math.sin(angle)
-      const spread = Math.random() * 3
+      const spread = Math.random() * (feet.length ? 0.25 : 3)
       ages[i] = 0
       positions[i * 3] = ground.x + (a.x * x + b.x * y) * spread
       positions[i * 3 + 1] = ground.y + (a.y * x + b.y * y) * spread
@@ -121,8 +131,6 @@ function stepDust(dust: Dust, body: PlanetSpec, dt: number, camera: THREE.Camera
   dust.material.uniforms.uScale.value = viewportHeight * 0.5
 
   // The moment the ship settles: a short rattle
-  const landed = gameStats.arrival.phase === 'landed'
-  if (landed && !dust.wasLanded) dust.landedAt = elapsed
   dust.wasLanded = landed
   if (dust.landedAt >= 0) {
     const shake = touchShake(elapsed - dust.landedAt)

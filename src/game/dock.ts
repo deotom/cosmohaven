@@ -1,5 +1,6 @@
 import { useSyncExternalStore } from 'react'
 import * as THREE from 'three'
+import { retractGear } from './landingGear'
 
 export type DockPhase = 'free' | 'docking' | 'docked' | 'undocking'
 export type DockState = { phase: DockPhase; stationId: number }
@@ -19,6 +20,7 @@ const subscribe = (listener: () => void) => {
 export const useDock = () => useSyncExternalStore(subscribe, getDock)
 
 export function setDock(next: Partial<DockState>) {
+  if (next.phase && next.phase !== 'free') retractGear()
   state = { ...state, ...next }
   listeners.forEach((listener) => listener())
 }
