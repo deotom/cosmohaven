@@ -146,6 +146,23 @@ describe('docking geometry', () => {
     expect(pose.outward.y).toBeCloseTo(0)
     expect(pose.outward.z).toBeCloseTo(0)
   })
+
+  it('faces the ship nose outward when it leaves the hangar', () => {
+    for (const yaw of [0, Math.PI / 2, Math.PI, -Math.PI / 2]) {
+      const pose = stationPose({ ...station, yaw })
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(pose.departureQuaternion)
+      expect(forward.distanceTo(pose.outward)).toBeLessThan(1e-10)
+    }
+  })
+})
+
+describe('ship body after undocking', () => {
+  it('stays a Dynamic body while docked so api.mass.set() can free it', async () => {
+    // cannon fixes the body type from the mass at construction: a mass-0 body would be STATIC forever
+    const { readFileSync } = await import('node:fs')
+    const source = readFileSync(new URL('./Ship.tsx', import.meta.url), 'utf8')
+    expect(source).toMatch(/getDock\(\)\.phase === 'free'[^\n]*: 0,[\s\S]{0,300}type: 'Dynamic'/)
+  })
 })
 
 describe('game state and upgrades', () => {

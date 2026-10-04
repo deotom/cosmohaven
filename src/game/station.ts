@@ -27,6 +27,7 @@ export const STATION_KEEP_OUT = 85
 
 export type StationPose = {
   quaternion: THREE.Quaternion
+  departureQuaternion: THREE.Quaternion
   slot: THREE.Vector3
   entrance: THREE.Vector3
   /** Unit vector pointing out of the hangar, in world space */
@@ -36,10 +37,14 @@ export type StationPose = {
 /** The station's frame in world space. Allocates, so call it on state changes, not every frame. */
 export function stationPose(station: StationSpec): StationPose {
   const quaternion = new THREE.Quaternion().setFromEuler(new THREE.Euler(0, station.yaw, 0))
+  const departureQuaternion = quaternion
+    .clone()
+    .multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI))
   const origin = new THREE.Vector3(...station.position)
   const toWorld = (local: Triplet) => new THREE.Vector3(...local).applyQuaternion(quaternion).add(origin)
   return {
     quaternion,
+    departureQuaternion,
     slot: toWorld(SLOT_LOCAL),
     entrance: toWorld(ENTRANCE_LOCAL),
     outward: new THREE.Vector3(0, 0, 1).applyQuaternion(quaternion),

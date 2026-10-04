@@ -6,6 +6,7 @@ import { dockInfo, dockRequests, getDock, setDock } from './dock'
 import { notify, repairHull, setAutopilot } from './gameState'
 import { getSector } from './sector'
 import { DOCK_MAX_SPEED, DOCK_RANGE, DOCK_TIME, UNDOCK_TIME, stationPose, type StationPose } from './station'
+import { controlLabel, getControlCode } from '../input/preferences'
 
 const smooth = (t: number) => t * t * (3 - 2 * t)
 
@@ -69,7 +70,12 @@ export function useDocking({ api, positionOut, quaternionOut, velocity, shipMass
       const inRange = nearest >= 0 && nearestDistance < DOCK_RANGE
       dockInfo.canDock = inRange && speed < DOCK_MAX_SPEED
       dockInfo.stationName = inRange ? stations[nearest].name : ''
-      dockInfo.prompt = !inRange ? '' : speed < DOCK_MAX_SPEED ? 'Press [E] to Dock at Shipyard' : `Slow down to dock (${Math.round(speed)} / ${DOCK_MAX_SPEED} u/s)`
+      dockInfo.prompt =
+        !inRange
+          ? ''
+          : speed < DOCK_MAX_SPEED
+            ? 'Press [E] to Dock at Shipyard'
+            : `Slow down to dock (${Math.round(speed)} / ${DOCK_MAX_SPEED} u/s) · hold ${controlLabel(getControlCode('thrustBackward'))} to brake`
 
       if (requested && dockInfo.canDock) {
         const station = stations[nearest]
@@ -133,7 +139,8 @@ export function useDocking({ api, positionOut, quaternionOut, velocity, shipMass
       const t = smooth(a.t)
       a.scratch.lerpVectors(pose.slot, a.exit, t)
       api.position.set(a.scratch.x, a.scratch.y, a.scratch.z)
-      api.quaternion.set(pose.quaternion.x, pose.quaternion.y, pose.quaternion.z, pose.quaternion.w)
+      a.q.slerpQuaternions(pose.quaternion, pose.departureQuaternion, smooth(Math.max(0, (a.t - 0.75) / 0.25)))
+      api.quaternion.set(a.q.x, a.q.y, a.q.z, a.q.w)
       api.velocity.set(0, 0, 0)
       api.angularVelocity.set(0, 0, 0)
       if (a.t >= 1) {

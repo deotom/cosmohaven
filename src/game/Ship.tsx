@@ -257,6 +257,9 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
       return {
         // Docked, docking and undocking ships are held by the shipyard: zero mass means nothing can push them
         mass: getDock().phase === 'free' ? blocks.length * BLOCK_MASS : 0,
+        // cannon picks the body type from the mass at construction; without this a mass-0 body is STATIC
+        // for good and api.mass.set() on undock never makes it move again
+        type: 'Dynamic' as const,
         onCollide: (e: CollideEvent) => handleImpact(Math.abs(e.contact.impactVelocity)),
         position: position.toArray(),
         rotation: [euler.x, euler.y, euler.z],
