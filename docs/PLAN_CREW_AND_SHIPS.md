@@ -628,7 +628,7 @@ type SaveGame     = { schemaVersion; ships: ShipInstance[]; crew: CrewInstance[]
 - [ ] test: ราคา deterministic · ไม่มี arbitrage ไร้ความเสี่ยง · ตลาดฟื้นตัว · ไม่แตะ sector เดิม · เซฟ/โหลด
 
 ### Phase V — Navigation (แบบ EVE) *(V1 ทำก่อนได้ทันที; V2 หลัง X2 ก่อน L) — ดู 8.14*
-- [~] **V1** `planPath` (ฟังก์ชันบริสุทธิ์) + autopilot หลบดาวเคราะห์/แอสเทอรอยด์/สถานี/หลุมแรงโน้มถ่วงลึก เป็นพื้นฐานทุก tier; test: ไม่ตัดสิ่งกีดขวาง, ความยาว ≤ ~1.5× เส้นตรง, fuzz ≥ 99% ถึงเป้า, deterministic, sector 3,000 seed ผ่าน
+- [x] **V1** `planPath` (ฟังก์ชันบริสุทธิ์) + autopilot หลบดาวเคราะห์/แอสเทอรอยด์/สถานี/หลุมแรงโน้มถ่วงลึก เป็นพื้นฐานทุก tier; test: ไม่ตัดสิ่งกีดขวาง, ความยาว ≤ ~1.5× เส้นตรง, fuzz ≥ 99% ถึงเป้า, deterministic, sector 3,000 seed ผ่าน
 - [ ] **V2** maneuver primitives (Approach / Orbit r / Keep at Range / Align / Stop / จำกัดความเร็ว) เป็นโมดูลเดียวที่ผู้เล่นและ AI ใช้ร่วม + Overview (รายการวัตถุเรียงระยะ + คำสั่ง) ต่อจากระบบล็อกเป้าหมาย
 - [ ] **V3** Warp ในระบบ (ตัดสินใจ: ปลดล็อกด้วยอัปเกรด, align+ชาร์จ, ห้ามในหลุมแรงโน้มถ่วง, ตรวจเส้นทางโล่ง, กินพลังงาน)
 

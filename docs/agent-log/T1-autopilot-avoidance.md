@@ -9,7 +9,7 @@ Branch: `feature/autopilot-avoidance` (จาก master `a732adb`)
 | `src/game/pathPlanner.test.ts` (ใหม่) | 17 test: planner, fuzz 3,000 แบบ, sector จริง 3,000 seed, `buildObstacles`, ระดับ `runAutopilot` |
 | `src/game/autopilot.ts` | `AutopilotInput.obstacles?`; `nextLeg` (cache + replan ~1 วินาที), `holdStill`, `flyThrough`; `navTask`/`harvestTask`/`dockTask` บินไปยัง waypoint ถัดไป |
 | `src/game/Ship.tsx` | ส่ง `obstacles: obstaclesFor(getSector())` ใน input (1 บรรทัด + import) |
-| `docs/PLAN_CREW_AND_SHIPS.md` | บรรทัด V1 เป็น `[~]` (ยังไม่ได้ตรวจในเบราว์เซอร์) |
+| `docs/PLAN_CREW_AND_SHIPS.md` | บรรทัด V1 เป็น `[~]` (ตรวจในเบราว์เซอร์แล้ว ดูท้ายไฟล์) |
 
 ## ออกแบบ (ย่อ)
 - **สิ่งกีดขวาง:** ดาวเคราะห์ = max(รัศมี + atmosphere + 30, 0.55 × wellRadius) (kind `well` ถ้า well ใหญ่กว่า); สถานี = `STATION_KEEP_OUT` (85 — รัศมีที่ generator กันหินและ scrap ไว้อยู่แล้ว ไม่มีข้อมูลขนาดจริงของสถานี); แอสเทอรอยด์ = รัศมี + 10 แล้วรวมกลุ่มที่ช่องว่าง < 10 เป็นทรงกลมเดียว (รัศมีไม่เกิน 70 และ **ต้องไม่ครอบจุด (0,0,0)** ซึ่งเป็นจุดที่ยานมาถึง — รุ่นแรกที่ไม่มีกฎนี้ทำให้ยานเริ่มอยู่ในก้อนหินสมมติ)
@@ -35,7 +35,7 @@ Branch: `feature/autopilot-avoidance` (จาก master `a732adb`)
 7. lint/test/build ✅
 
 ## ไม่ได้ตรวจ
-- **เบราว์เซอร์/การบินจริงไม่ได้ตรวจเลย** (ไม่ได้เปิด dev server, ไม่ได้ดู "Detouring…" ในเกม, ไม่ได้ดูว่ายานไม่ชนจริงภายใต้ฟิสิกส์). test ตรวจแค่ *เส้นทางและคำสั่งเลี้ยว* ไม่ใช่ว่ายานบินตามเส้นทางได้ — อาจเลี้ยวช้า/overshoot จุด waypoint (ความเร็วผ่าน waypoint 25 u/s และระยะถึง 15 u เป็นค่าที่ตั้งเอง ไม่ได้จูน)
+- การบินจริงตรวจแล้วรอบเดียว (ดูหัวข้อ "ตรวจในเบราว์เซอร์") — ยังไม่ได้ทดสอบกรณีหินขวางจริงที่ทำให้ `Path blocked`, หลาย sector, tier 1–3 แยกกัน (เบราว์เซอร์ใช้ tier เริ่มต้น); ความเร็วผ่าน waypoint 25 u/s และระยะถึง 15 u ตั้งเอง ไม่ได้จูน
 - ความรู้สึกของการบิน (โค้งสวยไหม แกว่งตอนสลับ waypoint ไหม) ผู้ใช้ต้องลอง
 - ผลของแรงโน้มถ่วงต่อเส้นทางจริง (เผื่อด้วย `0.55 × wellRadius` เท่านั้น ไม่ได้จำลอง)
 - ต้นทุน CPU ใน frame จริง (replan ~วินาทีละครั้ง; ใน test 6,999 เส้นทางรวมการสร้าง sector ใช้ ~0.6 วินาที แต่ไม่ได้วัดในเบราว์เซอร์)
@@ -51,3 +51,10 @@ Branch: `feature/autopilot-avoidance` (จาก master `a732adb`)
 - ในและหลัง sphere of influence ของดาว (arrival, orbit, descent) ไม่มีการหลบเพิ่ม (ตามสเปก: ไม่แตะตรรกะเดิม)
 - หลังปลดออกจากสถานีบ้าน ยานอยู่ในทรงกลมสถานีและถูกดันออกตามแนวรัศมีก่อน แม้ปลายทางอยู่อีกด้าน (ปลอดภัยแต่ไม่สั้นที่สุด)
 - เส้นทางไม่คิดอุกกาบาตที่เคลื่อนที่ — ใช้ `avoidMeteors` เดิม (เฉพาะ tier ≥ 2)
+
+## ตรวจในเบราว์เซอร์ (vite dev, home sector, เกมใหม่)
+- NAV: undock -> ไปดาว Kepler-9 ขึ้น "Detouring around Haven Drydock" แล้วเข้าเขต arrival ผ่าน และลงจอดได้ ไม่มีความเสียหายระหว่างทาง
+- DOCK: จาก ~330 u ล็อกสถานีแล้วบินกลับ ผ่านฝูงหิน อ้อมสถานี เข้าปากโรงเก็บ และ dock สำเร็จ ฮัลล์ 100%
+- HARVEST: เก็บ scrap 8 ชิ้นจนเต็ม cargo ฮัลล์ 100% ตลอดการเก็บ
+- ฮัลล์ลดเป็น 92% ตอนลอยนิ่งหลังเก็บเสร็จ ('Meteors in range') ไม่เกี่ยวกับ planner
+- ไม่ได้ตรวจ: กรณี Path blocked ในเกม, sector อื่นนอก home, tier 2–3
