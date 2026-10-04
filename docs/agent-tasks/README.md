@@ -47,7 +47,9 @@ powershell -ExecutionPolicy Bypass -File docs\agent-tasks\new-worktree.ps1 -Task
 
 **สถานะงาน (อัปเดตโดย lead):**
 - **T1 ✅ เสร็จ — merge เข้า master ในเครื่องแล้ว** (ดู `docs/agent-log/T1-autopilot-avoidance.md` ส่วน Lead review)
-- T2, T3, T4, T5, T6, T7, T8, T9: ยังไม่เริ่ม
+- **T8: เปิด worktree แล้ว** (`C:\cosmohaven-wt\T8`, branch `feature/autopilot-sim`, พอร์ต 5308) รอ agent ส่งงาน
+- **P0 (กล้อง/ลงจอด/กัน NaN) merge เข้า master แล้ว** — ตรวจในเบราว์เซอร์ผ่าน (ลงจอดนิ่ง ไม่ NaN)
+- T2, T3, T4, T5, T6, T7, T9: ยังไม่เริ่ม; **T10 (autopilot module tree, plan 8.18) เขียนสเปกหลัง T8 ผ่าน**
 - **ผู้ใช้รายงานหลัง T1:** autopilot ยังชนสิ่งของและเฉียดดาวแล้วถูกดูดเข้า → **T8 มาก่อน T6** (T6 รวมเข้า T8 ได้)
 - **ลำดับที่แนะนำตอนนี้:** T7 (ผู้ใช้เจอปัญหาตอนลงจอด) + T3 พร้อมกันได้; T6 หลังจากนั้น
 
