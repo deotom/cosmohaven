@@ -91,13 +91,13 @@ export function PauseMenu({
               >
                 <span style={{ display: 'block' }}>{profile.label}</span>
                 <span style={{ display: 'block', fontSize: 10, fontWeight: 400 }}>
-                  Meteor {profile.meteorInterval[0]}–{profile.meteorInterval[1]}s · prices ×{profile.priceMultiplier}
+                  Meteor about every {profile.meteorGap.mean}s · prices ×{profile.priceMultiplier}
                 </span>
               </button>
               )
             })}
           </div>
-          <div style={{ opacity: 0.75, marginTop: 6 }}>Meteor intervals and purchase prices change with difficulty.</div>
+          <div style={{ opacity: 0.75, marginTop: 6 }}>Meteor frequency and purchase prices change with difficulty.</div>
         </section>
 
         <section style={{ marginTop: 18 }}>

@@ -9,10 +9,11 @@ describe('difficulty profiles', () => {
     gameStats.harvesterTier = 1
   })
 
-  it('uses the approved meteor intervals', () => {
-    expect(DIFFICULTY_PROFILES.relaxed.meteorInterval).toEqual([30, 40])
-    expect(DIFFICULTY_PROFILES.standard.meteorInterval).toEqual([15, 20])
-    expect(DIFFICULTY_PROFILES.challenging.meteorInterval).toEqual([8, 12])
+  // T9: meteors were every 15-20 s on Standard and read as too frequent; gaps are now irregular (minimum + tail).
+  it('uses the T9 meteor gap profiles', () => {
+    expect(DIFFICULTY_PROFILES.relaxed.meteorGap).toEqual({ min: 25, mean: 100 })
+    expect(DIFFICULTY_PROFILES.standard.meteorGap).toEqual({ min: 15, mean: 50 })
+    expect(DIFFICULTY_PROFILES.challenging.meteorGap).toEqual({ min: 8, mean: 25 })
   })
 
   it('scales every purchase price and keeps free upgrades free', () => {
