@@ -10,8 +10,18 @@ export type PlaceableBlockType = Exclude<BlockType, 'core'>
 /** Build mode edits the ship and orbits the camera; pilot mode flies it with a chase camera. */
 export type GameMode = 'build' | 'pilot'
 
-/** Pilot-mode camera: smoothed third-person follow, or a free orbit around the ship. */
-export type CameraView = 'chase' | 'orbit'
+/**
+ * Pilot-mode camera: `chase` eases after the ship's heading and roll, `locked` is rigidly fixed to the ship (it
+ * rolls and flips exactly with it), `orbit` is a free orbit around the ship.
+ */
+export type CameraView = 'chase' | 'locked' | 'orbit'
+
+/** Whether the camera is attached to the ship (chase or locked) rather than free to orbit. */
+export const isFollowView = (view: CameraView) => view !== 'orbit'
+
+const CAMERA_VIEW_ORDER: readonly CameraView[] = ['chase', 'locked', 'orbit']
+export const nextCameraView = (view: CameraView): CameraView => CAMERA_VIEW_ORDER[(CAMERA_VIEW_ORDER.indexOf(view) + 1) % CAMERA_VIEW_ORDER.length]
+export const CAMERA_VIEW_LABELS: Record<CameraView, string> = { chase: 'CHASE', locked: 'SHIP-LOCKED', orbit: 'ORBIT' }
 
 export type Block = { pos: GridPos; type: BlockType }
 

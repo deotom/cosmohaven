@@ -2,7 +2,7 @@ import { CONTRACT_LABELS, contractHave } from '../game/contracts'
 import { getBlockCost, getCargoCapacity, getCargoVolume, RELICS_NEEDED, readGameStats } from '../game/gameState'
 import { useSector } from '../game/sector'
 import { shipState } from '../game/shipState'
-import type { CameraView, GameMode, PlaceableBlockType } from '../game/types'
+import { isFollowView, type CameraView, type GameMode, type PlaceableBlockType } from '../game/types'
 import { BLOCK_COLORS, BLOCK_LABELS, hudStyle } from './styles'
 import { useSampled } from './useSampled'
 
@@ -73,7 +73,7 @@ export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedTyp
         </div>
       )}
       {interior && <div style={{ opacity: 0.8 }}>Interior view · drag to look, scroll to zoom</div>}
-      {mode === 'pilot' && !interior && cameraView === 'chase' && !mouseLocked && (
+      {mode === 'pilot' && !interior && isFollowView(cameraView) && !mouseLocked && (
         <div style={{ color: '#ffcc33' }}>Click the scene to steer</div>
       )}
       {mode === 'build' && (

@@ -8,7 +8,7 @@ import { closeContextMenu } from './game/targetActions'
 import { ContextMenu, TargetReticle } from './game/TargetSystem'
 import { gameStats } from './game/gameState'
 import { usePointerLock } from './game/usePointerLock'
-import type { CameraView, GameMode, PlaceableBlockType } from './game/types'
+import { CAMERA_VIEW_LABELS, isFollowView, nextCameraView, type CameraView, type GameMode, type PlaceableBlockType } from './game/types'
 import { handleGameKey } from './input/keymap'
 import { ArrivalPanel } from './hud/ArrivalPanel'
 import { ContractsPanel } from './hud/ContractsPanel'
@@ -276,9 +276,9 @@ export default function App() {
   }, [victory])
 
   // Mouse steering grabs the pointer in pilot mode; orbit view needs the cursor for drag-to-look
-  const mouseLocked = usePointerLock(started && mode === 'pilot' && cameraView === 'chase' && !interior && !victory && !paused && !tutorialOpen)
+  const mouseLocked = usePointerLock(started && mode === 'pilot' && isFollowView(cameraView) && !interior && !victory && !paused && !tutorialOpen)
 
-  const toggleCameraView = () => setCameraView((v) => (v === 'chase' ? 'orbit' : 'chase'))
+  const toggleCameraView = () => setCameraView(nextCameraView)
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
@@ -387,7 +387,7 @@ export default function App() {
         </div>
         {mode === 'pilot' && !interior && (
           <div role="button" onClick={toggleCameraView} style={buttonStyle}>
-            CAMERA: {cameraView === 'chase' ? 'CHASE' : 'ORBIT'} [C]
+            CAMERA: {CAMERA_VIEW_LABELS[cameraView]} [C]
           </div>
         )}
       </div>

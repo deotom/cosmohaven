@@ -6,7 +6,7 @@ import { toggleFold } from '../game/fold'
 import { upgrade } from '../game/upgrades'
 import { actionsFor, closeContextMenu, runAction } from '../game/targetActions'
 import { cycleTarget } from '../game/targetScreen'
-import type { CameraView, GameMode, PlaceableBlockType } from '../game/types'
+import { nextCameraView, type CameraView, type GameMode, type PlaceableBlockType } from '../game/types'
 import { BLOCK_ORDER } from '../hud/styles'
 import { controlLabel, getControlCode, type ControlId } from './preferences'
 
@@ -58,7 +58,7 @@ export const KEY_BINDINGS: readonly Binding[] = [
   { code: 'KeyU', key: 'U', mode: 'all', action: 'upgradeHarvester', hint: 'Upgrade Harvester', control: 'upgradeHarvester' },
   { code: 'KeyI', key: 'I', mode: 'all', action: 'upgradeAutopilot', hint: 'Upgrade Auto-Pilot', control: 'upgradeAutopilot' },
   { code: 'KeyN', key: 'N', mode: 'all', action: 'waypoint', hint: 'Next waypoint', control: 'waypoint' },
-  { code: 'KeyC', key: 'C', mode: 'pilot', action: 'camera', hint: 'Switch chase / orbit camera', control: 'camera' },
+  { code: 'KeyC', key: 'C', mode: 'pilot', action: 'camera', hint: 'Cycle camera: chase / ship-locked / orbit', control: 'camera' },
   { code: 'KeyF', key: 'F', mode: 'pilot', action: 'flight', hint: 'Hold to harvest Scrap', flight: true, control: 'harvest' },
   { code: 'KeyP', key: 'P', mode: 'pilot', action: 'autopilot', hint: 'Toggle Auto-Pilot', shift: false, unavailableAfterVictory: true, control: 'autopilot' },
   { code: 'KeyP', key: 'Shift+P', mode: 'pilot', action: 'taskCycle', hint: 'Cycle Auto-Pilot task', shift: true, unavailableAfterVictory: true, control: 'autopilot' },
@@ -154,7 +154,7 @@ export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
       nextWaypoint()
       break
     case 'camera':
-      context.setCameraView((view) => (view === 'chase' ? 'orbit' : 'chase'))
+      context.setCameraView(nextCameraView)
       break
     case 'autopilot':
       toggleAutopilot()
