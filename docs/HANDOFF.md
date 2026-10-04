@@ -3,9 +3,10 @@
 เอกสารส่งมอบสำหรับ agent/คนที่รับงานต่อ อ่านคู่กับ [../AGENTS.md](../AGENTS.md) (กฎ) และ [agent-tasks/README.md](agent-tasks/README.md) (งานที่เตรียมไว้)
 
 ## 1. สถานะ repo
-- **`master` (ในเครื่อง) = `2a69b19`** รวมงานทั้งหมดแล้ว (fast-forward); `npm run lint` ผ่าน, `npm test` **100 test** ผ่าน, `npm run build` ผ่าน
+- **`master` (ในเครื่อง) = commit ล่าสุดของ `git log -1`** (ตอนส่งมอบ `658e3e8`) รวมงานทั้งหมดแล้ว; `npm run lint` ผ่าน, `npm test` **100 test** ผ่าน, `npm run build` ผ่าน
 - **ยังไม่ได้ push:** `master` ล้ำหน้า `origin/main` หลายสิบ commit — **default branch ของ remote คือ `main`**; การ push เข้า `main` จะ **deploy ขึ้น GitHub Pages ทันที** (ดู `.github/workflows/ci.yml`) จึงให้เจ้าของโปรเจกต์ตัดสินเอง
-- branch ที่เหลือหลังปิดงาน: ดูผลของ `git branch` (branch ที่ merge แล้วถูกลบ)
+- branch ในเครื่องเหลือแค่ `master` (branch งานทั้งหมด merge แล้วและถูกลบ; commit ยังอยู่ในประวัติของ master)
+- `origin/main` ตามหลัง `master` **21 commit** ตอนส่งมอบ
 - ไฟล์ใน working tree: สะอาด
 
 ## 2. แผนที่เอกสาร
