@@ -15,6 +15,7 @@ import {
   type CelestialBody,
 } from './gameState'
 import { planPath, type Obstacle, type PlannedPath } from './pathPlanner'
+import { landRefusal } from './surfaceDetail'
 import { scrapRegistry, type TargetState } from './targets'
 
 /** Max angular acceleration the auto-pilot asks for, matching the manual controls (rad/s²). */
@@ -688,6 +689,15 @@ function dockTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutput 
 
 // ---------- Entry point ----------
 
+/** A gas giant has no ground: drop the landing request and go back to the arrival choice (orbit stays available). */
+function refuseLanding(reason: string, out: AutopilotOutput): AutopilotOutput {
+  setArrival({ phase: 'choice' })
+  setAutopilot({ intent: 'choose' })
+  notify(reason, 'warning', 4500)
+  out.status = 'Landing refused: gas giant'
+  return out
+}
+
 /**
  * One tick of the auto-pilot. Fills `out` in place (no allocation) and never touches the ship: the caller
  * applies throttle, manoeuvre acceleration and angular acceleration.
@@ -706,7 +716,10 @@ export function runAutopilot(input: AutopilotInput, out: AutopilotOutput): Autop
   const body = CELESTIAL_BODIES[gameStats.arrival.body]
   if (body) {
     if (phase === 'insertion') return orbitInsertion(input, body, out)
-    if (phase === 'deorbit') return deorbit(input, body, out)
+    if (phase === 'deorbit') {
+      const refusal = landRefusal(body)
+      return refusal ? refuseLanding(refusal, out) : deorbit(input, body, out)
+    }
     if (phase === 'descent' && input.engaged) return descentController(input, body, out)
   }
   if (!input.engaged) return out

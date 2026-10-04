@@ -20,6 +20,7 @@ import {
 import { currentHarvester } from './upgrades'
 import { createTargetState, resolveTarget, stationEntrance } from './targets'
 import { shipState } from './shipState'
+import { isLandable } from './surfaceDetail'
 import { advanceFold, requestFold } from './fold'
 import {
   addCredits,
@@ -482,7 +483,7 @@ export function Ship({ positionOut, quaternionOut, mode, onBlockCountChange, sel
 
       // Touchdown: slow enough is a landing (on Earth 2.0, the end of the journey); faster is a crash, which the
       // collision damage already handles
-      if (altitude < LAND_ALTITUDE && arrivalNow.phase !== 'landed' && arrivalNow.phase !== 'none') {
+      if (altitude < LAND_ALTITUDE && arrivalNow.phase !== 'landed' && arrivalNow.phase !== 'none' && isLandable(dominant.body)) {
         const v = physics.current.velocity
         const radial = new THREE.Vector3(...v).dot(
           new THREE.Vector3(...physics.current.position).sub(new THREE.Vector3(...dominant.body.position)).normalize(),

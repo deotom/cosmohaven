@@ -588,8 +588,8 @@ type SaveGame     = { schemaVersion; ships: ShipInstance[]; crew: CrewInstance[]
 - [ ] Test: ไฟขาดแล้ว Safe Mode ทำงาน ไม่มีวงจรมรณะที่ผู้เล่นออกไม่ได้; balance ทุกระดับ AI; `npc` mode ไฟขาดไม่มีผลถาวร
 
 ### Phase P — Planet Surface & Landing Experience *(P0–P1 ทำก่อน Phase O/N ได้ทันที; ดู 8.15)*
-- [ ] **P0** วินิจฉัยตอนแตะพื้นด้วยตัวเลข (ระยะ/รัศมีภาพ/รัศมี collider/ขนาดยาน; ผู้ใช้เห็นกรณี 1/2/3) แล้วแก้ถ้าไม่ตรงกัน — งาน: `docs/agent-tasks/T7-planet-surface-p1.md`
-- [ ] **P1** detail layer (shader) + วัตถุบนพื้นแบบ instanced deterministic + ฝุ่น/สั่นตอนแตะ + **ดาวแก๊สลงจอดไม่ได้**
+- [x] **P0** วินิจฉัยตอนแตะพื้นด้วยตัวเลข (ระยะ/รัศมีภาพ/รัศมี collider/ขนาดยาน; ผู้ใช้เห็นกรณี 1/2/3) แล้วแก้ถ้าไม่ตรงกัน — งาน: `docs/agent-tasks/T7-planet-surface-p1.md`
+- [~] **P1** detail layer (shader) + วัตถุบนพื้นแบบ instanced deterministic + ฝุ่น/สั่นตอนแตะ + **ดาวแก๊สลงจอดไม่ได้**
 - [ ] **P2** ผิวตามประเภท/สภาพแวดล้อมจริงของดาว (หลัง Phase O ข) · ขาลงจอด
 - [ ] **P3** *(ภายหลัง/เสี่ยง)* ภูมิประเทศจริง (heightfield/LOD + collider ที่ตรงกับภาพ), ลูกเรือเดินบนผิวดาว
 
