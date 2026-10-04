@@ -3,6 +3,7 @@ import {
   getCargoCapacity,
   getCargoSaleValue,
   getCargoVolume,
+  getReservedCargo,
   getStorageTechCost,
   purchaseStorageTech,
   readGameStats,
@@ -17,6 +18,7 @@ export function TradePanel({ onClose }: { onClose: () => void }) {
   const game = useSampled(readGameStats)
   const atDrydock = getDock().phase === 'docked'
   const payout = getCargoSaleValue(atDrydock)
+  const reserved = getReservedCargo()
 
   return (
     <div
@@ -47,6 +49,11 @@ export function TradePanel({ onClose }: { onClose: () => void }) {
       <div>
         Cargo hold: {getCargoVolume().toFixed(1)} / {getCargoCapacity()} units · {game.cargo.scrap} Scrap · {game.cargo.relics} Relics · {game.cargo.surveyData} Survey Data
       </div>
+      {reserved.scrap + reserved.surveyData > 0 && (
+        <div style={{ marginTop: 6, color: '#ffd58a' }}>
+          Held back for your contracts: {reserved.scrap} Scrap · {reserved.surveyData} Data (not sold)
+        </div>
+      )}
       <div style={{ marginTop: 6, opacity: 0.8 }}>
         Scrap: {atDrydock ? 20 : 18} HC/unit · Survey Data: {atDrydock ? 50 : 45} HC/unit
       </div>

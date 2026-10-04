@@ -13,6 +13,9 @@ export const hudStyle: CSSProperties = {
   borderRadius: 8,
   pointerEvents: 'none',
   userSelect: 'none',
+  boxSizing: 'border-box',
+  maxHeight: 'calc(100vh - 32px)',
+  overflow: 'hidden',
 }
 
 export const buttonStyle: CSSProperties = {
@@ -22,6 +25,7 @@ export const buttonStyle: CSSProperties = {
   cursor: 'pointer',
   fontWeight: 700,
   letterSpacing: 2,
+  whiteSpace: 'nowrap',
 }
 
 export const panelStyle: CSSProperties = { ...hudStyle, position: 'static', top: undefined, left: undefined, minWidth: 260 }

@@ -10,7 +10,17 @@ import {
 } from './contracts'
 import { crewProfile } from './crewProfile'
 import { setDock } from './dock'
-import { BASE_CARGO_CAPACITY, SCRAP_SELL_VALUE, SURVEY_DATA_SELL_VALUE, gameStats } from './gameState'
+import {
+  BASE_CARGO_CAPACITY,
+  SCRAP_SELL_VALUE,
+  SURVEY_DATA_SELL_VALUE,
+  gameStats,
+  getCargoSaleValue,
+  getReservedCargo,
+  sellCargo,
+  tryAddCargo,
+} from './gameState'
+import { controlHints } from '../input/keymap'
 import { createSaveSnapshot, isSavedGame, resetNewGame, restoreSave } from './saveGame'
 import { enterSector, homeSector } from './sector'
 import { ALL_SERVICES, dockedHasService, stationServices } from './services'
@@ -214,5 +224,64 @@ describe('saving contracts', () => {
     gameStats.contracts = { round: 5, completed: 2, active: currentBoard() }
     resetNewGame({ ...crewProfile, look: { ...crewProfile.look } })
     expect(gameStats.contracts).toEqual({ round: 0, completed: 0, active: [] })
+  })
+})
+
+describe('cargo held for contracts', () => {
+  const takeScrapContract = () => {
+    for (let guard = 0; guard < 50; guard++) {
+      const offer = currentBoard().find((c) => c.kind === 'scrap')
+      if (offer) {
+        acceptContract(offer.id)
+        return offer
+      }
+      gameStats.contracts.round += 1
+    }
+    throw new Error('no scrap offer')
+  }
+
+  it('is not sold: the hold keeps what the contract needs', () => {
+    const offer = takeScrapContract()
+    gameStats.cargo.scrap = offer.amount + 3
+    expect(getReservedCargo()).toEqual({ scrap: offer.amount, surveyData: 0 })
+    expect(getCargoSaleValue(true)).toBe(3 * SCRAP_SELL_VALUE)
+
+    const wallet = gameStats.credits
+    expect(sellCargo(true)).toBe(3 * SCRAP_SELL_VALUE)
+    expect(gameStats.cargo.scrap).toBe(offer.amount)
+    expect(gameStats.credits).toBe(wallet + 3 * SCRAP_SELL_VALUE)
+    expect(completeContract(offer.id)).toBe(true) // still possible afterwards
+  })
+
+  it('sells nothing when the whole hold is spoken for', () => {
+    const offer = takeScrapContract()
+    gameStats.cargo.scrap = offer.amount
+    expect(getCargoSaleValue(true)).toBe(0)
+    expect(sellCargo(true)).toBe(0)
+    expect(gameStats.cargo.scrap).toBe(offer.amount)
+  })
+
+  it('without contracts everything sells as before', () => {
+    gameStats.cargo.scrap = 4
+    gameStats.cargo.surveyData = 1
+    expect(getCargoSaleValue(true)).toBe(4 * SCRAP_SELL_VALUE + SURVEY_DATA_SELL_VALUE)
+  })
+
+  it('announces the moment the hold covers a contract, once', () => {
+    const offer = takeScrapContract()
+    gameStats.cargo.scrap = offer.amount - 1
+    gameStats.notice = null
+    tryAddCargo('scrap')
+    expect((gameStats.notice as { text: string } | null)?.text).toContain('Contract ready')
+    gameStats.notice = null
+    tryAddCargo('scrap') // already covered: no repeat
+    expect(gameStats.notice).toBeNull()
+  })
+})
+
+describe('help key', () => {
+  it('is listed for every mode', () => {
+    expect(controlHints('pilot')).toContain('? — Show / hide this help')
+    expect(controlHints('build')).toContain('? — Show / hide this help')
   })
 })

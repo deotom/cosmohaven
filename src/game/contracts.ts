@@ -1,4 +1,4 @@
-import { BASE_CARGO_CAPACITY, SCRAP_SELL_VALUE, SURVEY_DATA_SELL_VALUE, gameStats, notify } from './gameState'
+import { BASE_CARGO_CAPACITY, CONTRACT_CARGO_FIELD, SCRAP_SELL_VALUE, SURVEY_DATA_SELL_VALUE, gameStats, notify } from './gameState'
 import { mulberry32 } from './rng'
 import { dockedHasService, dockedStation } from './services'
 
@@ -15,7 +15,7 @@ const SURVEY_PREMIUM = 1.8
 
 const CLIENTS = ['Haven Works', 'Vega Salvage Co.', 'Orbital Guild', 'Kessler & Daughters', 'The Quiet Fleet', 'Mira Station Co-op']
 
-export const CARGO_FIELD: Record<ContractKind, 'scrap' | 'surveyData'> = { scrap: 'scrap', survey: 'surveyData' }
+export const CARGO_FIELD = CONTRACT_CARGO_FIELD
 export const CONTRACT_LABELS: Record<ContractKind, string> = { scrap: 'Scrap', survey: 'Survey Data' }
 
 const hashString = (text: string) => {

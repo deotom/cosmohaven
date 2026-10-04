@@ -12,6 +12,7 @@ import { controlLabel, getControlCode, type ControlId } from './preferences'
 
 type BindingMode = GameMode | 'all'
 type KeyAction =
+  | 'help'
   | 'message'
   | 'dock'
   | 'interior'
@@ -50,6 +51,7 @@ type Binding = {
 }
 
 export const KEY_BINDINGS: readonly Binding[] = [
+  { code: 'Slash', key: '?', mode: 'all', action: 'help', hint: 'Show / hide this help' },
   { code: 'KeyM', key: 'M', mode: 'all', action: 'message', hint: 'Ships can only be modified at a drydock' },
   { code: 'KeyE', key: 'E', mode: 'all', action: 'dock', hint: 'Dock / undock', control: 'dock' },
   { code: 'KeyV', key: 'V', mode: 'all', action: 'interior', hint: 'Toggle interior view', control: 'interior' },
@@ -115,6 +117,7 @@ type KeymapContext = {
   setInterior: Dispatch<SetStateAction<boolean>>
   setCameraView: Dispatch<SetStateAction<CameraView>>
   setSelectedType: Dispatch<SetStateAction<PlaceableBlockType>>
+  toggleHelp: () => void
 }
 
 export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
@@ -129,6 +132,9 @@ export function handleGameKey(event: KeyboardEvent, context: KeymapContext) {
   if (!binding || (binding.unavailableAfterVictory && context.victory)) return
 
   switch (binding.action) {
+    case 'help':
+      context.toggleHelp()
+      break
     case 'message':
       notify('Ships can only be modified while docked at a drydock', 'warning', 3000)
       break

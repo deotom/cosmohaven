@@ -12,6 +12,7 @@ import type { CameraView, GameMode, PlaceableBlockType } from './game/types'
 import { handleGameKey } from './input/keymap'
 import { ArrivalPanel } from './hud/ArrivalPanel'
 import { ContractsPanel } from './hud/ContractsPanel'
+import { HelpOverlay } from './hud/HelpOverlay'
 import { TradePanel } from './hud/TradePanel'
 import { buttonStyle } from './hud/styles'
 import { useSampled } from './hud/useSampled'
@@ -157,6 +158,7 @@ export default function App() {
   const [interior, setInterior] = useState(false)
   const [tradeOpen, setTradeOpen] = useState(false)
   const [contractsOpen, setContractsOpen] = useState(false)
+  const [helpOpen, setHelpOpen] = useState(false)
   const [victory, setVictory] = useState(false)
   // Physics keeps running briefly after victory so the ship (now heavily damped) glides to a stop
   const [frozen, setFrozen] = useState(false)
@@ -205,6 +207,7 @@ export default function App() {
       setPaused(false)
       setTradeOpen(false)
       setContractsOpen(false)
+      setHelpOpen(false)
       setInterior(false)
       setCameraView('chase')
       setTutorialStep(0)
@@ -230,6 +233,7 @@ export default function App() {
     setPaused(false)
     setTradeOpen(false)
     setContractsOpen(false)
+    setHelpOpen(false)
     setInterior(false)
     setCameraView('chase')
     setSelectedType('hull')
@@ -293,7 +297,7 @@ export default function App() {
         return
       }
       if (paused) return
-      handleGameKey(event, { started, mode, victory, setInterior, setCameraView, setSelectedType })
+      handleGameKey(event, { started, mode, victory, setInterior, setCameraView, setSelectedType, toggleHelp: () => setHelpOpen((open) => !open) })
     }
     window.addEventListener('keydown', onKey)
     return () => window.removeEventListener('keydown', onKey)
@@ -337,7 +341,10 @@ export default function App() {
         </div>
       )}
 
-      <div className="hud-right-stack" style={{ position: 'absolute', top: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div
+        className="hud-right-stack"
+        style={{ position: 'absolute', top: 16, right: 16, display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 'calc(100vh - 32px)', overflow: 'hidden' }}
+      >
         <CrewPanel />
         <SystemsPanel />
       </div>
@@ -352,11 +359,14 @@ export default function App() {
         className="hud-bottom-controls"
         style={{
           position: 'absolute',
-          left: '50%',
+          left: 16,
+          width: 'calc(100vw - 32px)',
           bottom: 20,
-          transform: 'translateX(-50%)',
           display: 'flex',
+          flexWrap: 'wrap',
+          justifyContent: 'center',
           gap: 12,
+          pointerEvents: 'none',
         }}
       >
         <DockButton />
@@ -368,6 +378,9 @@ export default function App() {
             CONTRACTS
           </div>
         )}
+        <div role="button" onClick={() => setHelpOpen((open) => !open)} style={buttonStyle}>
+          HELP [?]
+        </div>
         {!victory && <div role="button" onClick={() => setPaused(true)} style={buttonStyle}>PAUSE [Esc]</div>}
         <div role="button" onClick={() => setInterior((v) => !v)} style={buttonStyle}>
           VIEW: {interior ? 'INTERIOR' : 'EXTERIOR'} [V]
@@ -383,6 +396,7 @@ export default function App() {
 
       {tradeOpen && <TradePanel onClose={() => setTradeOpen(false)} />}
       {contractsOpen && mode === 'build' && <ContractsPanel onClose={() => setContractsOpen(false)} />}
+      {helpOpen && <HelpOverlay mode={mode} onClose={() => setHelpOpen(false)} />}
       {tutorialOpen && <TutorialOverlay step={tutorialStep} onNext={advanceTutorial} onSkip={finishTutorial} />}
       {paused && (
         <PauseMenu

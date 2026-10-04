@@ -16,6 +16,8 @@ export const SURVEY_DATA_SELL_VALUE = 50
 export const BASE_CARGO_CAPACITY = 8
 
 export type CargoKind = 'scrap' | 'relics' | 'surveyData'
+/** Which hold slot a contract kind is delivered from */
+export const CONTRACT_CARGO_FIELD = { scrap: 'scrap', survey: 'surveyData' } as const
 const CARGO_ITEM_VOLUME: Record<CargoKind, number> = { scrap: 1, relics: 1, surveyData: 1 }
 export type StorageTechId = 'expanded-bay' | 'mass-compressor' | 'quantum-vault'
 export const STORAGE_TECHS: Record<StorageTechId, { name: string; description: string; capacity: number; volumeFactor: number; cost: number }> = {
@@ -274,6 +276,13 @@ export function tryAddCargo(kind: CargoKind, amount = 1) {
   }
   gameStats.cargo[kind] += amount
   if (kind === 'relics') gameStats.relics += amount
+  // Tell the pilot the moment a held contract can be handed in
+  for (const contract of gameStats.contracts.active) {
+    const have = gameStats.cargo[CONTRACT_CARGO_FIELD[contract.kind]]
+    if (CONTRACT_CARGO_FIELD[contract.kind] === kind && have >= contract.amount && have - amount < contract.amount) {
+      notify(`Contract ready: dock at a station to hand in (+${contract.reward} HC)`, 'gain', 3500)
+    }
+  }
   return true
 }
 
@@ -288,8 +297,25 @@ export function trySpendCredits(cost: number): boolean {
 
 export const getStorageTechCost = (id: StorageTechId) => adjustedCost(STORAGE_TECHS[id].cost, gameStats.difficulty)
 
+/** Cargo that active contracts are waiting for: selling it would make them impossible to hand in */
+export function getReservedCargo() {
+  const reserved = { scrap: 0, surveyData: 0 }
+  for (const contract of gameStats.contracts.active) reserved[CONTRACT_CARGO_FIELD[contract.kind]] += contract.amount
+  return reserved
+}
+
+/** What can actually be sold: the hold minus what active contracts need */
+export function getSellableCargo() {
+  const reserved = getReservedCargo()
+  return {
+    scrap: Math.max(0, gameStats.cargo.scrap - reserved.scrap),
+    surveyData: Math.max(0, gameStats.cargo.surveyData - reserved.surveyData),
+  }
+}
+
 export function getCargoSaleValue(atDrydock: boolean) {
-  const rawValue = gameStats.cargo.scrap * SCRAP_SELL_VALUE + gameStats.cargo.surveyData * SURVEY_DATA_SELL_VALUE
+  const sellable = getSellableCargo()
+  const rawValue = sellable.scrap * SCRAP_SELL_VALUE + sellable.surveyData * SURVEY_DATA_SELL_VALUE
   return Math.floor(rawValue * (atDrydock ? 1 : 0.9))
 }
 
@@ -299,12 +325,18 @@ export function sellCargo(atDrydock: boolean) {
     notify('No sellable cargo in the hold', 'warning')
     return 0
   }
-  const soldScrap = gameStats.cargo.scrap
-  const soldData = gameStats.cargo.surveyData
-  gameStats.cargo.scrap = 0
-  gameStats.cargo.surveyData = 0
+  const sellable = getSellableCargo()
+  const soldScrap = sellable.scrap
+  const soldData = sellable.surveyData
+  gameStats.cargo.scrap -= soldScrap
+  gameStats.cargo.surveyData -= soldData
   gameStats.credits += payout
-  notify(`Cargo sold: ${soldScrap} Scrap · ${soldData} Data → ${payout} HC${atDrydock ? '' : ' (Relay rate)'}`, 'gain', 3500)
+  const kept = gameStats.cargo.scrap + gameStats.cargo.surveyData
+  notify(
+    `Cargo sold: ${soldScrap} Scrap · ${soldData} Data → ${payout} HC${atDrydock ? '' : ' (Relay rate)'}${kept > 0 ? ` · kept ${kept} for contracts` : ''}`,
+    'gain',
+    3500,
+  )
   return payout
 }
 
