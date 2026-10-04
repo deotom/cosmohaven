@@ -5,19 +5,15 @@ import { useMemo, useRef } from 'react'
 import * as THREE from 'three'
 import { construction } from './dock'
 import { glow } from './glow'
-import { BAY, SLOT_LOCAL, type StationSpec } from './station'
+import { BAY, RING_RADIUS, RING_Z, SLOT_LOCAL, SPINE_LENGTH, WALL, stationCollisionShapes, type StationSpec } from './station'
 import { targetHandlers } from './targetScreen'
 import { stationRef } from './targets'
 import { getGridTexture, getHazardTexture } from './textures'
 
 // ---------- Layout (station-local units; the hangar opens towards +Z) ----------
 
-const WALL = 1.5
 const HALF_W = BAY.width / 2
 const HALF_H = BAY.height / 2
-const RING_Z = -57
-const RING_RADIUS = 22
-const SPINE_LENGTH = 52
 
 const HULL = new THREE.MeshStandardMaterial({ color: '#6f7a8c', metalness: 0.45, roughness: 0.55 })
 const DARK = new THREE.MeshStandardMaterial({ color: '#3a4352', metalness: 0.5, roughness: 0.55 })
@@ -387,28 +383,6 @@ function Exterior() {
 
 // ---------- Colliders ----------
 
-/** Static physics shapes: the hangar shell, the spine and the habitat ring. The hangar itself is empty space. */
-function collisionShapes() {
-  const shapes: { type: 'Box'; args: Triplet; position: Triplet; rotation?: Triplet }[] = [
-    { type: 'Box', args: [BAY.width + WALL * 2, WALL, BAY.depth + WALL], position: [0, -HALF_H - WALL / 2, -BAY.depth / 2 - WALL / 2] },
-    { type: 'Box', args: [BAY.width + WALL * 2, WALL, BAY.depth + WALL], position: [0, HALF_H + WALL / 2, -BAY.depth / 2 - WALL / 2] },
-    { type: 'Box', args: [WALL, BAY.height + WALL * 2, BAY.depth + WALL], position: [-HALF_W - WALL / 2, 0, -BAY.depth / 2 - WALL / 2] },
-    { type: 'Box', args: [WALL, BAY.height + WALL * 2, BAY.depth + WALL], position: [HALF_W + WALL / 2, 0, -BAY.depth / 2 - WALL / 2] },
-    { type: 'Box', args: [BAY.width + WALL * 2, BAY.height + WALL * 2, WALL], position: [0, 0, -BAY.depth - WALL / 2] },
-    { type: 'Box', args: [8.4, 8.4, SPINE_LENGTH], position: [0, 0, -BAY.depth - SPINE_LENGTH / 2] },
-  ]
-  for (let i = 0; i < 12; i++) {
-    const angle = (i / 12) * Math.PI * 2
-    shapes.push({
-      type: 'Box',
-      args: [(2 * Math.PI * RING_RADIUS) / 12 + 1, 5.4, 5.4],
-      position: [Math.cos(angle) * RING_RADIUS, Math.sin(angle) * RING_RADIUS, RING_Z],
-      rotation: [0, 0, angle + Math.PI / 2],
-    })
-  }
-  return shapes
-}
-
 /** A drydock station: a hangar bay with robotic arms and drones, a habitat ring and a runway of guide lights. */
 export function SpaceStation({ station }: { station: StationSpec }) {
   useCompoundBody(() => ({
@@ -416,7 +390,7 @@ export function SpaceStation({ station }: { station: StationSpec }) {
     type: 'Static',
     position: station.position,
     rotation: [0, station.yaw, 0],
-    shapes: collisionShapes(),
+    shapes: stationCollisionShapes(),
   }))
 
   return (

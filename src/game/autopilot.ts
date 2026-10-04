@@ -230,6 +230,14 @@ const route = {
   index: 0,
 }
 
+/** Forget the cached route so the next tick plans from scratch (a new flight, or a simulator run). */
+export function resetRoute() {
+  route.path = null
+  route.obstacles = NO_OBSTACLES
+  route.age = Infinity
+  route.index = 0
+}
+
 type Leg = { point: THREE.Vector3; final: boolean; around: string; blocked: boolean; reason: string }
 const leg: Leg = { point: new THREE.Vector3(), final: true, around: '', blocked: false, reason: '' }
 
@@ -382,7 +390,11 @@ function navTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutput {
   const { remaining, braking, angle } = flyTo(input, out, v.spot, influence, INFLUENCE_ARRIVAL_SPEED, dodging)
 
   if (remaining <= 0) {
-    // Inside the planet's sphere of influence: stop pushing and wait for the orbit / landing choice
+    // Inside the planet's sphere of influence: wait for the orbit / landing choice, holding the spot. Cutting the engine here
+    // would let gravity pull the ship down onto the planet while the pilot is still choosing.
+    stopRotation(input, out)
+    out.maneuverAccel.copy(input.gravity).multiplyScalar(-1).addScaledVector(input.velocity, -HOLD_KD)
+    clampLength(out.maneuverAccel, AP_THRUST_ACCEL)
     out.throttle = 0
     out.status = gameStats.autopilot.intent === 'choose' ? 'Arrival: choose [O] orbit / [L] land' : 'Arrival: starting manoeuvre'
     return out
@@ -516,10 +528,14 @@ function descentController(input: AutopilotInput, body: CelestialBody, out: Auto
 
 // ---------- HARVEST ----------
 
+/** Pieces the route planner found no way to (lying against a planet or boxed in by rocks); forgotten when the task changes */
+const unreachable = new Set<number>()
+
 function nearestScrap(from: THREE.Vector3, includeRelics: boolean, range: number): number | null {
   let best: number | null = null
   let bestDistance = range
   for (const [id, pickup] of scrapRegistry) {
+    if (unreachable.has(id)) continue
     if (pickup.kind === 'relic' && !includeRelics) continue
     if (!canAddCargo(pickup.kind === 'relic' ? 'relics' : 'scrap')) continue
     const distance = pickup.position.distanceTo(from)
@@ -568,6 +584,9 @@ function harvestTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutp
   const stop = input.harvestRange * 0.6
   const step = nextLeg(input, pickup.position)
   if (step.blocked) {
+    // Give up on this piece and go for another next tick, rather than hover in front of it for good
+    if (id !== null) unreachable.add(id)
+    setAutopilot({ harvestId: null })
     holdStill(input, out, step.reason)
     return out
   }
@@ -592,6 +611,7 @@ const anchor = { set: false, point: new THREE.Vector3() }
 /** Forget the hover point; the next HOLD takes the ship's position at that moment. */
 export function resetHold() {
   anchor.set = false
+  unreachable.clear()
 }
 
 function holdTask(input: AutopilotInput, out: AutopilotOutput): AutopilotOutput {

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { CelestialBody } from './gameState'
 import type { Sector } from './sector'
-import { STATION_KEEP_OUT } from './station'
+import { STATION_AVOID_RADIUS } from './station'
 
 /**
  * Pure path planning for the auto-pilot: spheres in, a list of waypoints out. It knows nothing about physics,
@@ -19,6 +19,10 @@ export type Obstacle = {
   center: Vec3Like
   radius: number
   kind: ObstacleKind
+  /** For a planet: the solid part (surface, atmosphere and a little room) that no path may enter, even on a final approach to a goal inside the avoid sphere */
+  core?: number
+  /** For a rock or a cluster of rocks: the solid rocks themselves (with a little room), which no final approach may cut through */
+  solids?: { center: Vec3Like; radius: number }[]
 }
 
 export type PlannedPath = {
@@ -35,7 +39,7 @@ export type BuildOptions = {
   planetClearance?: number
   /** A deep gravity well is avoided out to this fraction of its radius (the pull bends a straight line well before the surface) */
   wellFraction?: number
-  /** Avoidance radius of a station. Defaults to STATION_KEEP_OUT, the radius the generator already keeps clear of rocks and scrap */
+  /** Avoidance radius of a station. Defaults to STATION_AVOID_RADIUS, which covers the whole structure */
   stationRadius?: number
   /** Room around a rock for the ship's own size and a wobble in its heading */
   asteroidClearance?: number
@@ -53,8 +57,12 @@ export type PlanOptions = {
 }
 
 export const PLANET_CLEARANCE = 30
+/** Room above the atmosphere that the last leg of an approach into a planet's avoid sphere still keeps */
+export const CORE_CLEARANCE = 10
 export const WELL_AVOID_FRACTION = 0.55
 export const ASTEROID_CLEARANCE = 10
+/** Room around a rock's surface that the last leg into a rock's avoid sphere still keeps (the ship's own size and its wobble) */
+export const ROCK_SOLID_CLEARANCE = 6
 export const ASTEROID_MERGE_GAP = 10
 export const MAX_CLUSTER_RADIUS = 70
 export const DEFAULT_MAX_ITERATIONS = 48
@@ -87,7 +95,7 @@ const toVec = (p: Vec3Like) => ('x' in p ? p.clone() : new THREE.Vector3(p[0], p
 
 // ---------- Building obstacles ----------
 
-type Group = { center: THREE.Vector3; radius: number; members: { position: THREE.Vector3; pad: number }[]; first: number }
+type Group = { center: THREE.Vector3; radius: number; members: { position: THREE.Vector3; pad: number; solid?: number }[]; first: number }
 
 function enclose(group: Group, extra: { position: THREE.Vector3; pad: number }) {
   const members = [...group.members, extra]
@@ -102,7 +110,7 @@ function enclose(group: Group, extra: { position: THREE.Vector3; pad: number }) 
 function mergeAsteroids(sector: Sector, clearance: number, gap: number, maxRadius: number, keepClear: readonly THREE.Vector3[]): Obstacle[] {
   const groups: Group[] = []
   sector.asteroids.forEach((rock, index) => {
-    const entry = { position: new THREE.Vector3(...rock.position), pad: rock.radius + clearance }
+    const entry = { position: new THREE.Vector3(...rock.position), pad: rock.radius + clearance, solid: rock.radius + ROCK_SOLID_CLEARANCE }
     for (const group of groups) {
       if (group.center.distanceTo(entry.position) >= group.radius + entry.pad + gap) continue
       const merged = enclose(group, entry)
@@ -120,6 +128,7 @@ function mergeAsteroids(sector: Sector, clearance: number, gap: number, maxRadiu
     center: g.center.toArray() as [number, number, number],
     radius: g.radius,
     kind: 'asteroid',
+    solids: g.members.map((m) => ({ center: m.position.toArray() as [number, number, number], radius: m.solid ?? m.pad })),
   }))
 }
 
@@ -132,7 +141,7 @@ export function buildObstacles(sector: Sector, bodies: readonly CelestialBody[],
   const {
     planetClearance = PLANET_CLEARANCE,
     wellFraction = WELL_AVOID_FRACTION,
-    stationRadius = STATION_KEEP_OUT,
+    stationRadius = STATION_AVOID_RADIUS,
     asteroidClearance = ASTEROID_CLEARANCE,
     mergeGap = ASTEROID_MERGE_GAP,
     maxClusterRadius = MAX_CLUSTER_RADIUS,
@@ -149,6 +158,7 @@ export function buildObstacles(sector: Sector, bodies: readonly CelestialBody[],
       center: body.position,
       radius: Math.max(solid, well),
       kind: well > solid ? 'well' : 'planet',
+      core: body.radius + body.atmosphereHeight + CORE_CLEARANCE,
     })
   }
   for (const station of sector.stations) {
@@ -172,7 +182,7 @@ export function obstaclesFor(sector: Sector): readonly Obstacle[] {
 
 // ---------- Geometry ----------
 
-type Sphere = { c: THREE.Vector3; r: number; name: string; kind: ObstacleKind }
+type Sphere = { c: THREE.Vector3; r: number; name: string; kind: ObstacleKind; core?: number; solids?: { c: THREE.Vector3; r: number }[] }
 
 /** Where the segment a→b first enters the sphere, as a fraction of its length, or -1 if it stays clear. */
 function hitParam(a: THREE.Vector3, b: THREE.Vector3, s: Sphere): number {
@@ -300,6 +310,10 @@ function findGate(start: THREE.Vector3, goal: THREE.Vector3, dests: readonly Sph
       const gate = goal.clone().addScaledVector(u, t + standoff(Math.max(...dests.map((s) => s.r))))
       if (dests.some((s) => gate.distanceTo(s.c) < s.r + EPS)) continue
       if (blockers.some((s) => isInside(gate, s, -EPS) || hitParam(gate, goal, s) >= 0)) continue
+      // The last leg must not cut through a planet's solid body to reach a goal on its far side
+      if (dests.some((s) => s.core !== undefined && goal.distanceTo(s.c) >= s.core && hitParam(gate, goal, { ...s, r: s.core }) >= 0)) continue
+      // Nor through a rock that lies between the gate and scrap sitting close to it
+      if (dests.some((s) => s.solids?.some((rock) => goal.distanceTo(rock.c) >= rock.r && hitParam(gate, goal, rock as Sphere) >= 0))) continue
       return gate
     }
   }
@@ -324,9 +338,12 @@ type Node = { p: THREE.Vector3; around: string }
 export function planPath(from: Vec3Like, to: Vec3Like, obstacles: readonly Obstacle[], options: PlanOptions = {}): PlannedPath {
   const start = toVec(from)
   const goal = toVec(to)
-  const all: Sphere[] = obstacles.map((o) => ({ c: toVec(o.center), r: o.radius, name: o.name, kind: o.kind }))
+  const all: Sphere[] = obstacles.map((o) => ({ c: toVec(o.center), r: o.radius, name: o.name, kind: o.kind, core: o.core, solids: o.solids?.map((x) => ({ c: toVec(x.center), r: x.radius })) }))
   const dests = all.filter((s) => isInside(goal, s, 0))
   const blocked = (reason: string): PlannedPath => ({ waypoints: [], around: [], blocked: true, reason })
+  // A goal in a planet's atmosphere or below is not somewhere to fly to (a goal at the planet's centre means 'go to the planet')
+  const buried = dests.find((s) => s.core !== undefined && goal.distanceTo(s.c) > 1 && goal.distanceTo(s.c) < s.core)
+  if (buried) return blocked(`'s atmosphere is in the way`)
 
   let active = all
   let target = goal
