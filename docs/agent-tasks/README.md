@@ -9,6 +9,15 @@
 3. ใช้ prompt ด้านล่าง (เปลี่ยนแค่ชื่อไฟล์งาน)
 4. เมื่อ agent ส่งงาน ให้ lead ตรวจตาม "เกณฑ์ผ่าน" ของไฟล์งานนั้น + รัน `npm run lint && npm test && npm run build` เอง ก่อน merge
 
+### ถ้าเปิดหลาย agent พร้อมกัน — **ต้องแยกโฟลเดอร์ทำงาน (git worktree)**
+agent ทุกตัวสร้าง/สลับ branch ใน `C:\cosmohaven` ถ้าอยู่โฟลเดอร์เดียวกัน จะ **ทับไฟล์กันและทำให้ dev server ของอีกตัว reload กลางคัน** ให้สร้าง worktree ต่อ 1 งานด้วยสคริปต์ (ทดสอบแล้ว):
+```powershell
+powershell -ExecutionPolicy Bypass -File docsgent-tasks
+ew-worktree.ps1 -Task T3 -Branch feature/hud-radar -Port 5303
+```
+ได้โฟลเดอร์ `C:\cosmohaven-wt\T3` (จาก `master` ล่าสุด, `node_modules` เป็น junction ไม่ต้องติดตั้งใหม่) → **ให้ agent ทำงานในโฟลเดอร์นั้น** และใช้พอร์ต dev server ของตัวเองเท่านั้น; งานเดียวที่ทำคนเดียวจะใช้ `C:\cosmohaven` ตรง ๆ ก็ได้ (ถ้าไม่มี dev server ของใครรันอยู่)
+พอร์ตที่เสนอ: T2=5302, T3=5303, T7=5307, T8=5308, T9=5309
+
 ### Prompt มาตรฐาน (ก๊อปไปวางได้เลย)
 ```
 คุณทำงานในโปรเจกต์ CosmoHaven (C:\\cosmohaven)
