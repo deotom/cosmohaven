@@ -33,6 +33,10 @@
 | [T4](T4-milestones.md) | Milestones (Phase 0 ที่เหลือ) | `feature/milestones` | 8.1.1, Phase 0 | `src/game/milestones.ts` (ใหม่), `gameState.ts`, `saveGame.ts`, `HelpOverlay.tsx` | — | ❌ ไม่ทำพร้อม T5 (ชน `saveGame.ts`) |
 | [T5](T5-deterministic-sector-addressing.md) | พิกัด sector แบบ deterministic | `feature/sector-addressing` | 8.4, Phase U | `fold.ts`, `sector.ts`, `saveGame.ts`, `gameState.ts` | — | ❌ ทำ **คนเดียว** หลังรวม T4 แล้ว |
 
+**สถานะงาน (อัปเดตโดย lead):**
+- **T1 ✅ เสร็จ — merge เข้า master ในเครื่องแล้ว** (ดู `docs/agent-log/T1-autopilot-avoidance.md` ส่วน Lead review)
+- T2, T3, T4, T5: ยังไม่เริ่ม
+
 **ลำดับที่แนะนำ:** T1 + T3 (+ T2) พร้อมกันได้ → รวมเข้า master → T4 → T5
 **ห้ามเปิดพร้อมกัน:** T4 กับ T5 (ทั้งคู่เพิ่มฟิลด์ใน `saveGame.ts` และ `gameState.ts`)
 

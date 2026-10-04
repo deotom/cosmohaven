@@ -58,3 +58,10 @@ Branch: `feature/autopilot-avoidance` (จาก master `a732adb`)
 - HARVEST: เก็บ scrap 8 ชิ้นจนเต็ม cargo ฮัลล์ 100% ตลอดการเก็บ
 - ฮัลล์ลดเป็น 92% ตอนลอยนิ่งหลังเก็บเสร็จ ('Meteors in range') ไม่เกี่ยวกับ planner
 - ไม่ได้ตรวจ: กรณี Path blocked ในเกม, sector อื่นนอก home, tier 2–3
+
+## Lead review (Claude, 2026-10-04)
+- **รันเอง:** `npm run lint` exit 0, `npm test` **117 passed (10 files)**, `npm run build` exit 0 (ตรวจ exit code แยก)
+- **อ่าน diff แล้ว:** ขอบเขตอยู่ในไฟล์ที่อนุญาต (`pathPlanner*`, `autopilot.ts`, `Ship.tsx` 2 บรรทัด, บรรทัด V1 ในแผน, log); ไม่มี debug hook/`console`/`Math.random` ใหม่ (ที่ `Ship.tsx` เป็นของเดิมในส่วนความปั่นป่วนตอน re-entry); `obstacles` เป็น optional จึงไม่กระทบ test เดิม — **รับเป็นข้อสมมติที่สมเหตุสมผล**
+- **ความไม่ตรงกันเล็กน้อย:** ตารางในหัว log บอกบรรทัดแผนเป็น `[~]` แต่ commit ล่าสุดเปลี่ยนเป็น `[x]` — lead ใช้ `[x]` พร้อมหมายเหตุในแผนว่าส่วนที่ยังไม่ได้ตรวจคืออะไร
+- **ไม่ได้ตรวจเอง:** ไม่ได้รันซ้ำในเบราว์เซอร์ (ใช้ผลของผู้ทำ: NAV/DOCK/HARVEST ใน home sector 1 รอบ); ยังไม่มีใครตรวจ `Path blocked` ในเกมจริง, tier 2–3, sector อื่น, ต้นทุน CPU ใน frame จริง, **ความรู้สึกของการบินอ้อม**
+- **งานต่อยอดที่แนะนำ:** (1) harvest: ถ้าเส้นทางไปเศษที่เลือกถูกขวางให้ข้ามไปเศษถัดไปแทนการหยุดนิ่ง; (2) ปรับ clearance/standoff หลังผู้ใช้ลองบิน; (3) วัดเวลา `planPath` ในเบราว์เซอร์ (ตั้งงบ)

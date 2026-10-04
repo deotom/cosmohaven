@@ -3,11 +3,12 @@
 เอกสารส่งมอบสำหรับ agent/คนที่รับงานต่อ อ่านคู่กับ [../AGENTS.md](../AGENTS.md) (กฎ) และ [agent-tasks/README.md](agent-tasks/README.md) (งานที่เตรียมไว้)
 
 ## 1. สถานะ repo
-- **`master` (ในเครื่อง) = commit ล่าสุดของ `git log -1`** (ตอนส่งมอบ `658e3e8`) รวมงานทั้งหมดแล้ว; `npm run lint` ผ่าน, `npm test` **100 test** ผ่าน, `npm run build` ผ่าน
+- **`master` (ในเครื่อง) = commit ล่าสุดของ `git log -1`** (ตอนส่งมอบ `658e3e8`) รวมงานทั้งหมดแล้ว; `npm run lint` ผ่าน, `npm test` **117 test** ผ่าน (หลังรวม T1), `npm run build` ผ่าน
 - **ยังไม่ได้ push:** `master` ล้ำหน้า `origin/main` หลายสิบ commit — **default branch ของ remote คือ `main`**; การ push เข้า `main` จะ **deploy ขึ้น GitHub Pages ทันที** (ดู `.github/workflows/ci.yml`) จึงให้เจ้าของโปรเจกต์ตัดสินเอง
 - branch ในเครื่องเหลือแค่ `master` (branch งานทั้งหมด merge แล้วและถูกลบ; commit ยังอยู่ในประวัติของ master)
 - `origin/main` ตามหลัง `master` **21 commit** ตอนส่งมอบ
 - ไฟล์ใน working tree: สะอาด
+- commit ที่ agent สร้างอาจมีผู้เขียนเป็น `Copilot` และมี commit checkpoint อัตโนมัติชื่อ `Agent host session …` ปนอยู่ — เป็นเรื่องปกติของระบบที่รัน agent
 
 ## 2. แผนที่เอกสาร
 | ไฟล์ | ใช้ทำอะไร |
@@ -27,6 +28,8 @@
 - **กล้อง:** โหมด ship-locked, chase เป็น quaternion (แก้การกระโดด 180° เมื่อตีลังกาเร็ว), orbit ไร้ขั้ว + ORBIT FOLLOW `[X]`
 - **เอกสาร/แผน:** ทิศทาง Cosmic Nomads, Genesis Schematics, Earth 2.0 เป็นแหล่งโบราณ (Ultimate Core), Outposts + Habitability, สิ่งมีชีวิตประจำถิ่น, Docking ข้ามยาน, กฎหมาย/ต่อสู้ (8.12), EVE/Spore (8.13), การนำทางแบบ EVE + เสียง (8.14), HUD/UX (8.11)
 
+- **T1 Autopilot หลบสิ่งกีดขวาง (V1):** `pathPlanner.ts` + ต่อเข้า NAV/HARVEST/DOCK ทุก tier (ทำโดย agent, lead ตรวจแล้ว; ดู log)
+
 **ข้อสำคัญ:** โค้ดยังเป็นเกมเดิม + ส่วนที่ระบุข้างบน — **ส่วนใหญ่ของแผน (Phase O, N, L, T, V2/V3, S, C, C2, D…) ยังเป็นเอกสาร ไม่ใช่โค้ด**
 
 ## 4. สิ่งที่ยังไม่ได้ตรวจ (ห้ามอ้างว่าใช้ได้)
@@ -34,6 +37,7 @@
 - **ส่งสัญญาด้วย cargo จริงในเกม** — ตรวจด้วย unit test เท่านั้น
 - **fold ที่ถูกขัดจังหวะ (Hull/หลุมแรงโน้มถ่วง) และ EVAC** ในเบราว์เซอร์ — ตรวจแค่ unit test
 - **สถานะ HUD ที่ไม่เคยวัด:** orbit/ลงจอด (Arrival panel), fold กำลังชาร์จ, interior, pause, จอแนวตั้ง/มือถือ
+- **T1:** ยังไม่ได้ตรวจ `Path blocked` ในเกมจริง, tier 2–3, sector อื่น, ต้นทุน CPU ใน frame จริง, ความรู้สึกของการบินอ้อม; harvest ที่เส้นทางถูกขวางจะหยุดนิ่งแทนการข้ามไปเศษถัดไป
 - **เป้า HUD ≤ ~12 บรรทัดในสถานะบิน ยังไม่ถึง** (ตอนนี้ 19)
 - **ตัวเลขเศรษฐกิจ/สมดุล** (ค่าตอบแทนสัญญา ×1.4–1.7, ค่า fold, ฯลฯ) — ยังไม่เคยเล่นจริงเพื่อดูความรู้สึก; เสียง: **ไม่มีเลย**
 - การเล่นจนจบแบบเต็มรอบ (spawn → … → ลงจอด Earth 2.0) ไม่เคยยืนยัน
