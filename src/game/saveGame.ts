@@ -1,4 +1,5 @@
 import { crewProfile, setCrewProfile, type CrewProfile, type RoleId } from './crewProfile'
+import { MAX_ACTIVE_CONTRACTS, emptyContracts, type ContractKind, type ContractState } from './contracts'
 import { setNextSectorId } from './fold'
 import {
   gameStats,
@@ -27,6 +28,8 @@ export type SavedGame = {
   game: {
     credits: number
     cargo: { scrap: number; relics: number; surveyData: number }
+    /** Absent in saves made before contract boards existed */
+    contracts?: ContractState
     storageTech: StorageTechId | null
     ownedStorageTechs: StorageTechId[]
     harvesterTier: number
@@ -224,6 +227,21 @@ export function saveValidationError(value: unknown): string | null {
   return null
 }
 
+const CONTRACT_KINDS: readonly ContractKind[] = ['scrap', 'survey']
+
+function isContractState(value: unknown): value is ContractState {
+  if (!isRecord(value) || !Array.isArray(value.active)) return false
+  if (!isIntegerInRange(value.round, 0, 1_000_000_000) || !isIntegerInRange(value.completed, 0, 1_000_000_000)) return false
+  if (value.active.length > MAX_ACTIVE_CONTRACTS) return false
+  const ids = new Set<string>()
+  for (const item of value.active) {
+    if (!isRecord(item) || !isString(item.id, 120) || !isString(item.client, 80) || !isEnum(CONTRACT_KINDS, item.kind)) return false
+    if (!isIntegerInRange(item.amount, 1, 1_000) || !isIntegerInRange(item.reward, 0, 1_000_000)) return false
+    ids.add(item.id)
+  }
+  return ids.size === value.active.length
+}
+
 function isGameData(value: unknown): value is SavedGame['game'] {
   if (!isRecord(value) || !isRecord(value.cargo) || !isRecord(value.sideEvent)) return false
   const cargo = value.cargo
@@ -233,6 +251,7 @@ function isGameData(value: unknown): value is SavedGame['game'] {
     isIntegerInRange(cargo.scrap, 0, 1_000_000) &&
     isIntegerInRange(cargo.relics, 0, 1_000_000) &&
     isIntegerInRange(cargo.surveyData, 0, 1_000_000) &&
+    (value.contracts === undefined || isContractState(value.contracts)) &&
     (value.storageTech === null || isEnum(STORAGE_TECH_IDS, value.storageTech)) &&
     Array.isArray(value.ownedStorageTechs) &&
     value.ownedStorageTechs.every((id) => isEnum(STORAGE_TECH_IDS, id)) &&
@@ -371,6 +390,7 @@ export function createSaveSnapshot(): SavedGame {
       // A fold still charging is not saved, so its fee goes back into the saved balance rather than vanishing
       credits: gameStats.credits + (gameStats.fold.phase === 'charging' ? gameStats.fold.reserved : 0),
       cargo: { ...gameStats.cargo },
+      contracts: { ...gameStats.contracts, active: gameStats.contracts.active.map((contract) => ({ ...contract })) },
       storageTech: gameStats.storageTech,
       ownedStorageTechs: [...gameStats.ownedStorageTechs],
       harvesterTier: gameStats.harvesterTier,
@@ -407,6 +427,9 @@ export function restoreSave(save: SavedGame) {
   setCrewProfile({ ...save.profile, look: { ...save.profile.look } })
   gameStats.credits = save.game.credits
   gameStats.cargo = { ...save.game.cargo }
+  gameStats.contracts = save.game.contracts
+    ? { ...save.game.contracts, active: save.game.contracts.active.map((contract) => ({ ...contract })) }
+    : emptyContracts()
   gameStats.storageTech = save.game.storageTech
   gameStats.ownedStorageTechs = [...save.game.ownedStorageTechs]
   gameStats.harvesterTier = save.game.harvesterTier
@@ -465,6 +488,7 @@ export function resetNewGame(profile: CrewProfile) {
   resetRepairCooldown()
   gameStats.credits = 100
   gameStats.cargo = { scrap: 0, relics: 0, surveyData: 0 }
+  gameStats.contracts = emptyContracts()
   gameStats.storageTech = null
   gameStats.ownedStorageTechs = []
   gameStats.difficulty = 'standard'

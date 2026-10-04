@@ -1,3 +1,4 @@
+import type { Contract } from './contracts'
 import type { PlaceableBlockType } from './types'
 import { adjustedCost, type Difficulty } from './difficulty'
 
@@ -100,6 +101,8 @@ export type Notice = { text: string; kind: 'warning' | 'gain'; until: number }
 export const gameStats = {
   credits: STARTING_CREDITS,
   cargo: { scrap: 0, relics: 0, surveyData: 0 },
+  /** Jobs taken at station contract boards; `round` advances when one is completed so the boards post new work */
+  contracts: { round: 0, completed: 0, active: [] as Contract[] },
   storageTech: null as StorageTechId | null,
   ownedStorageTechs: [] as StorageTechId[],
   difficulty: 'standard' as Difficulty,
@@ -351,6 +354,7 @@ export function readGameStats() {
     ...gameStats,
     notice,
     cargo: { ...gameStats.cargo },
+    contracts: { ...gameStats.contracts, active: gameStats.contracts.active.map((contract) => ({ ...contract })) },
     sideEvent: { ...gameStats.sideEvent },
     ownedStorageTechs: [...gameStats.ownedStorageTechs],
     harvest: { ...gameStats.harvest },

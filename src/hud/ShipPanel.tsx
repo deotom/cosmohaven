@@ -1,3 +1,4 @@
+import { CONTRACT_LABELS, contractHave } from '../game/contracts'
 import { getBlockCost, getCargoCapacity, getCargoVolume, RELICS_NEEDED, readGameStats } from '../game/gameState'
 import { useSector } from '../game/sector'
 import type { CameraView, GameMode, PlaceableBlockType } from '../game/types'
@@ -29,6 +30,11 @@ export function ShipPanel({ mode, cameraView, interior, mouseLocked, selectedTyp
         Cargo: {game.cargo.scrap} Scrap · {game.cargo.relics} Relics · {game.cargo.surveyData} Data ({getCargoVolume().toFixed(1)}/{getCargoCapacity()} units)
       </div>
       <div style={{ color: '#d6a8ff' }}>Sector: {sector.name}</div>
+      {game.contracts.active.map((contract) => (
+        <div key={contract.id} style={{ color: contractHave(contract) >= contract.amount ? '#4dffb8' : '#ffd58a' }}>
+          Contract: {Math.min(contractHave(contract), contract.amount)}/{contract.amount} {CONTRACT_LABELS[contract.kind]} → {contract.reward} HC
+        </div>
+      ))}
       {game.sideEvent.status !== 'none' && (
         <div style={{ color: game.sideEvent.status === 'complete' ? '#4dffb8' : '#c88bff' }}>
           {game.sideEvent.status === 'complete'

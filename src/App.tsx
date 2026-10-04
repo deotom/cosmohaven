@@ -11,12 +11,14 @@ import { usePointerLock } from './game/usePointerLock'
 import type { CameraView, GameMode, PlaceableBlockType } from './game/types'
 import { handleGameKey } from './input/keymap'
 import { ArrivalPanel } from './hud/ArrivalPanel'
+import { ContractsPanel } from './hud/ContractsPanel'
 import { TradePanel } from './hud/TradePanel'
 import { buttonStyle } from './hud/styles'
 import { useSampled } from './hud/useSampled'
 import { ShipPanel } from './hud/ShipPanel'
 import { CrewPanel, SystemsPanel } from './hud/SystemsPanel'
 import { DockButton, DockPrompt } from './hud/Warnings'
+import { dockedHasService } from './game/services'
 import { ShipyardPanel } from './hud/ShipyardPanel'
 import { PauseMenu } from './hud/PauseMenu'
 import { StartMenu } from './hud/StartMenu'
@@ -154,6 +156,7 @@ export default function App() {
   const [cameraView, setCameraView] = useState<CameraView>('chase')
   const [interior, setInterior] = useState(false)
   const [tradeOpen, setTradeOpen] = useState(false)
+  const [contractsOpen, setContractsOpen] = useState(false)
   const [victory, setVictory] = useState(false)
   // Physics keeps running briefly after victory so the ship (now heavily damped) glides to a stop
   const [frozen, setFrozen] = useState(false)
@@ -201,6 +204,7 @@ export default function App() {
       setFrozen(saveSlot.save.game.victory)
       setPaused(false)
       setTradeOpen(false)
+      setContractsOpen(false)
       setInterior(false)
       setCameraView('chase')
       setTutorialStep(0)
@@ -225,6 +229,7 @@ export default function App() {
     setFrozen(false)
     setPaused(false)
     setTradeOpen(false)
+    setContractsOpen(false)
     setInterior(false)
     setCameraView('chase')
     setSelectedType('hull')
@@ -358,6 +363,11 @@ export default function App() {
         <div role="button" onClick={() => setTradeOpen((open) => !open)} style={buttonStyle}>
           {mode === 'build' ? 'DRYDOCK TRADE' : 'TRADE RELAY'}
         </div>
+        {mode === 'build' && dockedHasService('contracts') && (
+          <div role="button" onClick={() => setContractsOpen((open) => !open)} style={buttonStyle}>
+            CONTRACTS
+          </div>
+        )}
         {!victory && <div role="button" onClick={() => setPaused(true)} style={buttonStyle}>PAUSE [Esc]</div>}
         <div role="button" onClick={() => setInterior((v) => !v)} style={buttonStyle}>
           VIEW: {interior ? 'INTERIOR' : 'EXTERIOR'} [V]
@@ -372,6 +382,7 @@ export default function App() {
       <FoldOverlay />
 
       {tradeOpen && <TradePanel onClose={() => setTradeOpen(false)} />}
+      {contractsOpen && mode === 'build' && <ContractsPanel onClose={() => setContractsOpen(false)} />}
       {tutorialOpen && <TutorialOverlay step={tutorialStep} onNext={advanceTutorial} onSkip={finishTutorial} />}
       {paused && (
         <PauseMenu

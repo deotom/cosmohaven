@@ -1,5 +1,6 @@
 import type { Triplet } from '@react-three/cannon'
 import * as THREE from 'three'
+import type { ServiceId } from './services'
 
 /** A Space Station with a drydock: the only place the ship can be built or modified. */
 export type StationSpec = {
@@ -8,6 +9,8 @@ export type StationSpec = {
   position: Triplet
   /** Rotation about the vertical axis; the hangar opens towards the station's local +Z */
   yaw: number
+  /** What the station offers; leave out for a full drydock hub (every service) */
+  services?: ServiceId[]
 }
 
 /** The hangar bay's clear interior, in station-local units; it opens at z = 0 and runs back to z = -depth. */
