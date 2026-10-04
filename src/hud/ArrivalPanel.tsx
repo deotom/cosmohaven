@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react'
 import { CELESTIAL_BODIES, readGameStats, requestArrival } from '../game/gameState'
+import { isLandable } from '../game/surfaceDetail'
 import { useSampled } from './useSampled'
 
 /** The arrival choice, orbital insertion, and landing telemetry, shown while the ship is inside a planet's sphere of influence. */
@@ -10,6 +11,7 @@ export function ArrivalPanel() {
   if (a.phase === 'none' || !body) return null
 
   const well = game.well
+  const landable = isLandable(body)
   const altitude = well?.altitude ?? 0
   const vertical = well?.radialSpeed ?? 0
   const orbitSpeed = well?.orbitSpeed ?? 0
@@ -51,8 +53,9 @@ export function ArrivalPanel() {
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 8 }}>
             {choiceButton('O', 'ENTER ORBIT', '#4dffb8', () => requestArrival('orbit'))}
-            {choiceButton('L', 'INITIATE LANDING', '#ffb347', () => requestArrival('land'))}
+            {landable && choiceButton('L', 'INITIATE LANDING', '#ffb347', () => requestArrival('land'))}
           </div>
+          {!landable && <div style={{ marginTop: 6, color: '#ffb347', fontSize: 12 }}>GAS GIANT · no surface to land on</div>}
         </>
       )}
       {a.phase === 'insertion' && (
@@ -69,7 +72,7 @@ export function ArrivalPanel() {
             {body.name} · altitude {Math.round(altitude).toLocaleString()} u · {Math.round(well?.speed ?? 0)} u/s · engine off
           </div>
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginTop: 6 }}>
-            {choiceButton('L', 'DE-ORBIT AND LAND', '#ffb347', () => requestArrival('land'))}
+            {landable ? choiceButton('L', 'DE-ORBIT AND LAND', '#ffb347', () => requestArrival('land')) : <span style={{ color: '#ffb347', fontSize: 12 }}>GAS GIANT · no surface to land on</span>}
           </div>
         </>
       )}

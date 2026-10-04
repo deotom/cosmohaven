@@ -1,24 +1,21 @@
 import { useSphere } from '@react-three/cannon'
 import { useFrame } from '@react-three/fiber'
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import * as THREE from 'three'
 import { Atmosphere } from './Atmosphere'
+import { GroundProps } from './GroundProps'
+import { LandingDust } from './LandingDust'
 import type { PlanetSpec } from './sector'
+import { shipState } from './shipState'
+import { createDetailUniforms, detailStrength, DUST_ALTITUDE, hashString, patchDetailShader, planetKind, PROPS_ALTITUDE, setDetailStrength } from './surfaceDetail'
 import { targetHandlers } from './targetScreen'
 import { planetRef } from './targets'
-import { createCloudTexture, createPlanetTextures, createRingTexture, radialRingUVs, type PlanetKind } from './textures'
-
-function hashString(text: string) {
-  let h = 2166136261
-  for (let i = 0; i < text.length; i++) h = Math.imul(h ^ text.charCodeAt(i), 16777619)
-  return h >>> 0
-}
+import { createCloudTexture, createPlanetTextures, createRingTexture, radialRingUVs } from './textures'
 
 /** Decides what a planet looks like from its name, so a given planet always looks the same. */
 function planetLook(body: PlanetSpec) {
   const hash = hashString(body.name)
-  const roll = (hash % 1000) / 1000
-  const kind: PlanetKind = roll < 0.3 ? 'gas' : roll < 0.7 ? 'rocky' : 'ice'
+  const kind = planetKind(body.name)
   return {
     kind,
     seed: hash % 100000,
@@ -63,9 +60,25 @@ export function Planet({ body }: { body: PlanetSpec }) {
 
   const planet = useRef<THREE.Mesh>(null)
   const cloudLayer = useRef<THREE.Mesh>(null)
+  const cloudMaterial = useRef<THREE.MeshStandardMaterial>(null)
+  const detail = useRef(createDetailUniforms())
+  const [nearness, setNearness] = useState<'far' | 'props' | 'dust'>('far')
+  const surfaceKind = look.kind
   useFrame((_, dt) => {
-    if (planet.current) planet.current.rotation.y += dt * 0.012
-    if (cloudLayer.current) cloudLayer.current.rotation.y += dt * 0.02
+    const p = shipState.position
+    const altitude = Math.hypot(p.x - body.position[0], p.y - body.position[1], p.z - body.position[2]) - body.radius
+    const strength = detailStrength(altitude)
+    setDetailStrength(detail.current, altitude)
+    // The ground is held still under a ship that is coming down: the collider does not turn, so a turning texture would slide the landed ship
+    const spin = 1 - strength
+    if (planet.current) planet.current.rotation.y += dt * 0.012 * spin
+    if (cloudLayer.current) cloudLayer.current.rotation.y += dt * 0.02 * spin
+    // Clouds hang about a unit above the ground: thin them out so the surface detail shows from just above it
+    if (cloudMaterial.current) cloudMaterial.current.opacity = 1 - 0.9 * strength
+    if (surfaceKind !== 'gas') {
+      const next = altitude < DUST_ALTITUDE + 15 ? 'dust' : altitude < PROPS_ALTITUDE ? 'props' : 'far'
+      if (next !== nearness) setNearness(next)
+    }
   })
 
   return (
@@ -80,13 +93,18 @@ export function Planet({ body }: { body: PlanetSpec }) {
           metalness={0}
           emissive={body.emissive}
           emissiveIntensity={0.7}
+          onBeforeCompile={(shader) => patchDetailShader(shader, detail.current)}
+          customProgramCacheKey={() => 'planet-detail'}
         />
       </mesh>
+
+      {nearness !== 'far' && <GroundProps body={body} ice={look.kind === 'ice'} />}
+      {nearness === 'dust' && <LandingDust body={body} />}
 
       {clouds && (
         <mesh ref={cloudLayer}>
           <sphereGeometry args={[body.radius * 1.012, 80, 56]} />
-          <meshStandardMaterial map={clouds} transparent depthWrite={false} roughness={1} />
+          <meshStandardMaterial ref={cloudMaterial} map={clouds} transparent depthWrite={false} roughness={1} />
         </mesh>
       )}
 
