@@ -7,25 +7,32 @@ import { targetHandlers } from './targetScreen'
 import { meteorRef } from './targets'
 import { hazardStats } from './types'
 import { DIFFICULTY_PROFILES } from './difficulty'
+import { getDock } from './dock'
+import {
+  MAX_ACTIVE_METEORS,
+  PALETTES,
+  firstMeteorDelay,
+  meteorTrajectory,
+  nextMeteorGap,
+  planMeteorEvent,
+  type MeteorSpec,
+  type Vec3,
+} from './meteorField'
+import { disposeMeteorGeometries, getMeteorGeometry, meteorColliderRadius, meteorDetail } from './meteorGeometry'
 
-const FIRST_METEOR_DELAY = 6 // seconds; short so the first one shows up quickly
-const SPAWN_DISTANCE = 80
-const METEOR_SPEED = 18
-const METEOR_RADIUS = 1.3
-const METEOR_MASS = 40 // ships weigh a few units, so this really hurts
 const METEOR_LIFETIME_MS = 20_000
 
-type MeteorData = { id: number; position: Triplet; velocity: Triplet }
+type MeteorData = { id: number; position: Triplet; velocity: Triplet; spec: MeteorSpec }
 
 type MeteorProps = MeteorData & { onExpire: (id: number) => void }
 
-function Meteor({ id, position, velocity, onExpire }: MeteorProps) {
+function Meteor({ id, position, velocity, spec, onExpire }: MeteorProps) {
   const [ref] = useSphere<THREE.Mesh>(() => ({
-    mass: METEOR_MASS,
-    args: [METEOR_RADIUS],
+    mass: spec.mass,
+    args: [meteorColliderRadius(spec.radius)],
     position,
     velocity,
-    angularVelocity: [1.2, 0.8, 0.5],
+    angularVelocity: spec.spin,
     linearDamping: 0, // keep it on course
     angularDamping: 0,
   }))
@@ -58,42 +65,69 @@ function Meteor({ id, position, velocity, onExpire }: MeteorProps) {
     t.position = [e[12], e[13], e[14]]
   })
 
+  const palette = PALETTES[spec.palette % PALETTES.length]
+  // The physics mesh stays unscaled (cannon owns its matrix); the visible rock is a scaled child.
   return (
-    <mesh ref={ref} castShadow {...targetHandlers(meteorRef(id))}>
-      <icosahedronGeometry args={[METEOR_RADIUS, 1]} />
-      <meshStandardMaterial color="#4a3a32" emissive="#ff5a1f" emissiveIntensity={0.6} roughness={1} flatShading />
+    <mesh ref={ref} {...targetHandlers(meteorRef(id))}>
+      <mesh geometry={getMeteorGeometry(spec.variant, meteorDetail(spec.radius))} scale={spec.radius} castShadow>
+        <meshStandardMaterial
+          color={palette.color}
+          emissive={palette.emissive}
+          emissiveIntensity={spec.emissiveIntensity}
+          roughness={1}
+          flatShading
+        />
+      </mesh>
     </mesh>
   )
 }
 
-const randomBetween = ([min, max]: [number, number]) => min + Math.random() * (max - min)
+type Pending = { at: number; spec: MeteorSpec }
 
-/** Spawns meteors at the active difficulty's interval, aimed at the ship's current position. */
+/**
+ * Spawns meteors at irregular intervals (occasionally a shower of small ones) with varied size, speed and aim.
+ * Nothing spawns while the ship is docked. All tuning lives in meteorField.ts and the difficulty profiles.
+ */
 export function EventManager({ shipPosition }: { shipPosition: RefObject<THREE.Vector3> }) {
   const [meteors, setMeteors] = useState<MeteorData[]>([])
   const nextId = useRef(0)
-  const countdown = useRef(FIRST_METEOR_DELAY)
+  const clock = useRef(0)
+  const nextEventAt = useRef(firstMeteorDelay(Math.random))
+  const pending = useRef<Pending[]>([])
+  const active = useRef(0)
 
   useFrame((_, dt) => {
-    if (gameStats.victory) return
-    countdown.current -= Math.min(dt, 0.1)
-    if (countdown.current > 0) return
-    countdown.current = randomBetween(DIFFICULTY_PROFILES[gameStats.difficulty].meteorInterval)
+    if (gameStats.victory || getDock().phase === 'docked') return
+    clock.current += Math.min(dt, 0.1)
 
-    const target = shipPosition.current
-    const direction = new THREE.Vector3(Math.random() - 0.5, (Math.random() - 0.5) * 0.6, Math.random() - 0.5).normalize()
-    const spawn = target.clone().addScaledVector(direction, SPAWN_DISTANCE)
-    const velocity = target.clone().sub(spawn).normalize().multiplyScalar(METEOR_SPEED)
+    if (clock.current >= nextEventAt.current) {
+      const event = planMeteorEvent(Math.random)
+      for (const { delay, spec } of event.meteors) pending.current.push({ at: clock.current + delay, spec })
+      const lastDelay = event.meteors[event.meteors.length - 1].delay
+      nextEventAt.current = clock.current + lastDelay + nextMeteorGap(Math.random, DIFFICULTY_PROFILES[gameStats.difficulty].meteorGap)
+    }
 
-    setMeteors((prev) => [
-      ...prev,
-      { id: nextId.current++, position: spawn.toArray(), velocity: velocity.toArray() },
-    ])
+    const due = pending.current.filter((p) => p.at <= clock.current)
+    if (due.length === 0) return
+    pending.current = pending.current.filter((p) => p.at > clock.current)
+
+    const target = shipPosition.current.toArray() as Vec3
+    const room = Math.max(0, MAX_ACTIVE_METEORS - active.current)
+    const spawned = due.slice(0, room).map(({ spec }): MeteorData => {
+      const { position, velocity } = meteorTrajectory(target, spec)
+      return { id: nextId.current++, position, velocity, spec }
+    })
+    if (spawned.length === 0) return
+    active.current += spawned.length
+    setMeteors((prev) => [...prev, ...spawned])
   })
 
   useEffect(() => {
     hazardStats.meteors = meteors.length
+    active.current = meteors.length
   }, [meteors.length])
+
+  useEffect(() => disposeMeteorGeometries, [])
 
   const [expire] = useState(() => (id: number) => setMeteors((prev) => prev.filter((m) => m.id !== id)))
 
