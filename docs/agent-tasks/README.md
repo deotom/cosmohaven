@@ -47,7 +47,7 @@ powershell -ExecutionPolicy Bypass -File docs\agent-tasks\new-worktree.ps1 -Task
 
 **สถานะงาน (อัปเดตโดย lead):**
 - **T1 ✅ เสร็จ — merge เข้า master ในเครื่องแล้ว** (ดู `docs/agent-log/T1-autopilot-avoidance.md` ส่วน Lead review)
-- **T8: เปิด worktree แล้ว** (`C:\cosmohaven-wt\T8`, branch `feature/autopilot-sim`, พอร์ต 5308) รอ agent ส่งงาน
+- **T8 ✅ เสร็จ — merge เข้า master ในเครื่องแล้ว** (รวม T6; ตัวจำลอง `autopilotSim.ts`; log `docs/agent-log/T8-autopilot-sim.md`) — **ข้อค้นพบที่ยังไม่แก้:** แรงขับหลักของยานจริงไม่คูณ `dt` (ที่ 144 fps แรงมากกว่าที่ 60 fps ~2.4×) ต้องแก้แยก; ยังไม่ได้ตรวจในเบราว์เซอร์: NAV ผ่านหินหลายก้อน/เฉียดดาวช้า ๆ
 - **P0 (กล้อง/ลงจอด/กัน NaN) merge เข้า master แล้ว** — ตรวจในเบราว์เซอร์ผ่าน (ลงจอดนิ่ง ไม่ NaN)
 - T2, T3, T4, T5, T6, T7, T9: ยังไม่เริ่ม; **T10 (autopilot module tree, plan 8.18) เขียนสเปกหลัง T8 ผ่าน**
 - **ผู้ใช้รายงานหลัง T1:** autopilot ยังชนสิ่งของและเฉียดดาวแล้วถูกดูดเข้า → **T8 มาก่อน T6** (T6 รวมเข้า T8 ได้)
