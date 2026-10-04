@@ -61,6 +61,7 @@
 - คำสั่งรวม `a; b; c` ใน shell อาจกลืน exit code ของ `npm run build` (เคยเกิด: test ที่มี type error ผ่านแต่ build ล้ม) — **ตรวจ exit code ของ build แยกเสมอ**
 - เมื่อ test ผ่านแต่ `tsc` ไม่ผ่าน (narrowing ของ `gameStats.notice`) ให้ cast ใน test
 - Windows: ไฟล์ชื่อต่างกันแค่ตัวพิมพ์ใหญ่/เล็กชนกัน; git เตือน LF→CRLF เป็นเรื่องปกติ
+- **ห้ามแชร์ `node_modules` ระหว่างโฟลเดอร์ด้วย junction/symlink:** ตอนทดสอบสคริปต์ worktree `git worktree remove --force` เดินตาม junction แล้วลบไฟล์ใน `node_modules` จริงไป ~63 จาก 162 แพ็กเกจ (รวม `.bin`) — กู้ได้ด้วย `npm ci` (ใช้ lock เดิม ได้เวอร์ชันเดิม) สคริปต์ตอนนี้ใช้ `npm ci` ต่อ worktree แทน
 - headless Chrome (swiftshader) ได้ ~2 FPS: การรอเหตุการณ์ในเกม (undock, fold) ต้อง poll สถานะ ไม่ใช่ sleep สั้น ๆ; **ไม่ออกเสียง**
 
 ## 7. วิธีตรวจ (ทุกงาน)

@@ -64,3 +64,80 @@ export function rotateOrbitWithShip(
 export function freeOrbitUp(cameraQuaternion: THREE.Quaternion, out: THREE.Vector3) {
   return out.set(0, 1, 0).applyQuaternion(cameraQuaternion)
 }
+
+// ---------- Landing view ----------
+
+/** Altitude (above the surface) where the landing view starts to blend in, and where it is fully in charge. */
+export const LANDING_VIEW_START = 70
+export const LANDING_VIEW_FULL = 35
+/** How far above the ship, and to the side, the landing camera hovers, so the ground fills the view below the ship. */
+export const LANDING_HEIGHT = 9
+export const LANDING_SIDE = 6
+/** The camera is never allowed closer to a planet's centre than its surface plus this. */
+export const SURFACE_MARGIN = 2
+
+const smooth = (t: number) => {
+  const x = Math.max(0, Math.min(1, t))
+  return x * x * (3 - 2 * x)
+}
+
+/**
+ * How much of the landing view to use: 0 unless the ship is descending or has landed, then ramping from 0 to 1
+ * as the altitude falls from LANDING_VIEW_START to LANDING_VIEW_FULL.
+ * A retro landing points the nose away from the ground, so the chase camera (behind the nose) ends up between the
+ * ship and the ground looking away from it, inside the exhaust and finally below the surface.
+ */
+export function landingBlend(altitude: number, phase: string) {
+  if (phase !== 'descent' && phase !== 'landed') return 0
+  return smooth((LANDING_VIEW_START - altitude) / (LANDING_VIEW_START - LANDING_VIEW_FULL))
+}
+
+const lookMatrix = new THREE.Matrix4()
+const rightScratch = new THREE.Vector3()
+const normalScratch = new THREE.Vector3()
+const tangentScratch = new THREE.Vector3()
+
+/**
+ * A camera pose for the last metres of a landing: above the ship (on the side away from the planet), a little to
+ * one side, looking at the ship with the ground behind it and "up" pointing away from the surface.
+ */
+export function landingCameraPose(
+  shipPosition: THREE.Vector3,
+  planetCenter: THREE.Vector3,
+  shipQuaternion: THREE.Quaternion,
+  outPosition: THREE.Vector3,
+  outQuaternion: THREE.Quaternion,
+) {
+  normalScratch.copy(shipPosition).sub(planetCenter)
+  if (normalScratch.lengthSq() < 1e-12) normalScratch.set(0, 1, 0)
+  normalScratch.normalize()
+
+  // A sideways direction along the ground: the ship's own right, flattened onto the surface
+  rightScratch.set(1, 0, 0).applyQuaternion(shipQuaternion)
+  tangentScratch.copy(rightScratch).addScaledVector(normalScratch, -rightScratch.dot(normalScratch))
+  if (tangentScratch.lengthSq() < 1e-6) {
+    // The ship's right points straight at or away from the ground: use its forward instead
+    rightScratch.set(0, 0, -1).applyQuaternion(shipQuaternion)
+    tangentScratch.copy(rightScratch).addScaledVector(normalScratch, -rightScratch.dot(normalScratch))
+    if (tangentScratch.lengthSq() < 1e-6) tangentScratch.set(normalScratch.y, -normalScratch.x, 0)
+    if (tangentScratch.lengthSq() < 1e-6) tangentScratch.set(0, 0, 1)
+  }
+  tangentScratch.normalize()
+
+  outPosition.copy(shipPosition).addScaledVector(normalScratch, LANDING_HEIGHT).addScaledVector(tangentScratch, LANDING_SIDE)
+  lookMatrix.lookAt(outPosition, shipPosition, normalScratch)
+  outQuaternion.setFromRotationMatrix(lookMatrix)
+  return outPosition
+}
+
+/** Pushes a camera position out of a planet: never closer to its centre than radius + margin. */
+export function clampAboveSurface(position: THREE.Vector3, center: THREE.Vector3, radius: number, margin = SURFACE_MARGIN) {
+  const minimum = radius + margin
+  const offset = normalScratch.copy(position).sub(center)
+  const distance = offset.length()
+  if (distance >= minimum) return false
+  if (distance < 1e-9) offset.set(0, 1, 0)
+  else offset.multiplyScalar(1 / distance)
+  position.copy(center).addScaledVector(offset, minimum)
+  return true
+}

@@ -14,7 +14,7 @@ agent ทุกตัวสร้าง/สลับ branch ใน `C:\cosmohave
 ```powershell
 powershell -ExecutionPolicy Bypass -File docs\agent-tasks\new-worktree.ps1 -Task T3 -Branch feature/hud-radar -Port 5303
 ```
-ได้โฟลเดอร์ `C:\cosmohaven-wt\T3` (จาก `master` ล่าสุด, `node_modules` เป็น junction ไม่ต้องติดตั้งใหม่) → **ให้ agent ทำงานในโฟลเดอร์นั้น** และใช้พอร์ต dev server ของตัวเองเท่านั้น; งานเดียวที่ทำคนเดียวจะใช้ `C:\cosmohaven` ตรง ๆ ก็ได้ (ถ้าไม่มี dev server ของใครรันอยู่)
+ได้โฟลเดอร์ `C:\cosmohaven-wt\T3` จาก `master` ล่าสุด พร้อม `node_modules` ของตัวเอง (`npm ci` ประมาณ 40 วินาที) → **ให้ agent ทำงานในโฟลเดอร์นั้น** และใช้พอร์ต dev server ของตัวเองเท่านั้น; **ห้ามแชร์ `node_modules` ด้วย junction/symlink** (เคยทำให้ `git worktree remove` ลบไฟล์ใน `node_modules` จริงไปครึ่งหนึ่ง ต้อง `npm ci` กู้); งานเดียวที่ทำคนเดียวใช้ `C:\cosmohaven` ตรง ๆ ได้ถ้าไม่มี dev server ของใครรันอยู่
 พอร์ตที่เสนอ: T2=5302, T3=5303, T7=5307, T8=5308, T9=5309
 
 ### Prompt มาตรฐาน (ก๊อปไปวางได้เลย)

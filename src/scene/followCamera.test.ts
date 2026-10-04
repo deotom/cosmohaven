@@ -8,7 +8,14 @@ import {
   followCameraOrientation,
   followCameraPosition,
   followFrameFromCamera,
+  LANDING_HEIGHT,
+  LANDING_VIEW_FULL,
+  LANDING_VIEW_START,
+  SURFACE_MARGIN,
+  clampAboveSurface,
   freeOrbitUp,
+  landingBlend,
+  landingCameraPose,
   rotateOrbitWithShip,
 } from './followCamera'
 
@@ -215,5 +222,86 @@ describe('orbit view that follows the ship', () => {
       expect(Math.abs(up.dot(forward))).toBeLessThan(1e-9)
       expect(Math.abs(up.length() - 1)).toBeLessThan(1e-9)
     }
+  })
+})
+
+describe('landing view', () => {
+  const center = new THREE.Vector3(120, -40, 300)
+  const radius = 60
+
+  it('only applies while descending or landed, and ramps up as the ground gets close', () => {
+    for (const phase of ['none', 'choice', 'insertion', 'orbiting', 'deorbit']) expect(landingBlend(10, phase)).toBe(0)
+    for (const phase of ['descent', 'landed']) {
+      expect(landingBlend(LANDING_VIEW_START + 50, phase)).toBe(0)
+      expect(landingBlend(LANDING_VIEW_START, phase)).toBe(0)
+      expect(landingBlend(LANDING_VIEW_FULL, phase)).toBe(1)
+      expect(landingBlend(0, phase)).toBe(1)
+      let last = 0
+      for (let altitude = LANDING_VIEW_START; altitude >= 0; altitude -= 1) {
+        const blend = landingBlend(altitude, phase)
+        expect(blend).toBeGreaterThanOrEqual(last)
+        expect(blend).toBeLessThanOrEqual(1)
+        last = blend
+      }
+    }
+  })
+
+  it('puts the camera above the ship, on the side away from the ground, whichever way the ship is turned', () => {
+    // The retro landing in the game: the nose points away from the ground, so the chase camera would sit below it
+    const rand = mulberry32(41)
+    const position = new THREE.Vector3()
+    const orientation = new THREE.Quaternion()
+    for (let i = 0; i < 300; i++) {
+      const normal = new THREE.Vector3(rand() * 2 - 1, rand() * 2 - 1, rand() * 2 - 1).normalize()
+      const altitude = rand() * 40
+      const ship = center.clone().addScaledVector(normal, radius + altitude)
+      landingCameraPose(ship, center, randomQuaternion(rand), position, orientation)
+      const cameraAltitude = position.distanceTo(center) - radius
+      expect(cameraAltitude).toBeGreaterThan(altitude + LANDING_HEIGHT - 1e-6)
+      // looking at the ship, with "up" away from the ground
+      const forward = new THREE.Vector3(0, 0, -1).applyQuaternion(orientation)
+      expect(forward.dot(ship.clone().sub(position).normalize())).toBeGreaterThan(0.999999)
+      expect(new THREE.Vector3(0, 1, 0).applyQuaternion(orientation).dot(normal)).toBeGreaterThan(0.3)
+    }
+  })
+
+  it('copes with a ship whose own right or forward axis points straight at the ground', () => {
+    const position = new THREE.Vector3()
+    const orientation = new THREE.Quaternion()
+    const ship = center.clone().add(new THREE.Vector3(0, radius + 5, 0))
+    // Right axis pointing down at the ground, then forward axis pointing down, then straight above the planet's pole
+    const rollDown = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 0, 1), -Math.PI / 2)
+    const pitchDown = new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(1, 0, 0), -Math.PI / 2)
+    for (const quaternion of [rollDown, pitchDown, new THREE.Quaternion()]) {
+      landingCameraPose(ship, center, quaternion, position, orientation)
+      expect(Number.isFinite(position.x + position.y + position.z + orientation.x + orientation.y + orientation.z + orientation.w)).toBe(true)
+      expect(position.distanceTo(center) - radius).toBeGreaterThan(5 + LANDING_HEIGHT - 1e-6)
+    }
+    // Even a ship at the planet's centre gives a finite pose
+    landingCameraPose(center.clone(), center, new THREE.Quaternion(), position, orientation)
+    expect(Number.isFinite(position.length() + orientation.length())).toBe(true)
+  })
+
+  it('keeps the camera out of the planet: underground points are pushed up, others stay', () => {
+    const rand = mulberry32(8)
+    for (let i = 0; i < 300; i++) {
+      const direction = new THREE.Vector3(rand() * 2 - 1, rand() * 2 - 1, rand() * 2 - 1).normalize()
+      const distance = rand() * radius * 1.5
+      const point = center.clone().addScaledVector(direction, distance)
+      const before = point.clone()
+      const moved = clampAboveSurface(point, center, radius)
+      if (distance >= radius + SURFACE_MARGIN) {
+        expect(moved).toBe(false)
+        expect(point.distanceTo(before)).toBe(0)
+      } else {
+        expect(moved).toBe(true)
+        expect(point.distanceTo(center)).toBeCloseTo(radius + SURFACE_MARGIN, 6)
+        // pushed straight out along the same line from the centre
+        expect(point.clone().sub(center).normalize().dot(direction)).toBeGreaterThan(0.999999)
+      }
+    }
+    const atCentre = center.clone()
+    clampAboveSurface(atCentre, center, radius)
+    expect(atCentre.distanceTo(center)).toBeCloseTo(radius + SURFACE_MARGIN, 6)
   })
 })

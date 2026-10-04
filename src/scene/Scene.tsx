@@ -16,12 +16,23 @@ import { SunDisc, SunLight } from '../game/Sun'
 import { EventManager } from '../game/EventManager'
 import { ReentryEffects } from '../game/ReentryEffects'
 import { shipState } from '../game/shipState'
+import { CELESTIAL_BODIES, gameStats } from '../game/gameState'
 import { TargetTracker } from '../game/TargetSystem'
 import { useSector } from '../game/sector'
 import { Planet } from '../game/Planet'
 import { ScrapField } from '../game/ScrapField'
 import { isFollowView, type CameraView, type GameMode, type PlaceableBlockType } from '../game/types'
-import { advanceFollowFrame, followCameraOrientation, followCameraPosition, followFrameFromCamera, freeOrbitUp, rotateOrbitWithShip } from './followCamera'
+import {
+  advanceFollowFrame,
+  clampAboveSurface,
+  followCameraOrientation,
+  followCameraPosition,
+  followFrameFromCamera,
+  freeOrbitUp,
+  landingBlend,
+  landingCameraPose,
+  rotateOrbitWithShip,
+} from './followCamera'
 
 type ControlsLike = { target: THREE.Vector3 }
 
@@ -77,6 +88,10 @@ function CameraRig({ chasing, locked, freeOrbit, orbitFollow, interior, docked, 
   const wasChasing = useRef(false)
   const previousShipQuaternion = useMemo(() => new THREE.Quaternion(), [])
   const wasOrbitFollowing = useRef(false)
+  const landingCenter = useMemo(() => new THREE.Vector3(), [])
+  const landingPosition = useMemo(() => new THREE.Vector3(), [])
+  const landingNormal = useMemo(() => new THREE.Vector3(), [])
+  const landingQuaternion = useMemo(() => new THREE.Quaternion(), [])
   const upScratch = useMemo(() => new THREE.Vector3(), [])
   const wasInterior = useRef(false)
   const wasDocked = useRef(false)
@@ -117,6 +132,29 @@ function CameraRig({ chasing, locked, freeOrbit, orbitFollow, interior, docked, 
       // The view is a quaternion (no up vector to flip), so loops, rolls and tumbles stay smooth
       followCameraOrientation(followFrame, camera.quaternion)
       camera.up.set(0, 1, 0).applyQuaternion(followFrame)
+      // Landing: the chase camera sits behind a nose that points away from the ground, i.e. in the exhaust and finally
+      // under the surface looking at sky. Near the ground take a view from above instead, and never go underground.
+      let nearest: (typeof CELESTIAL_BODIES)[number] | null = null
+      let nearestAltitude = Infinity
+      for (const body of CELESTIAL_BODIES) {
+        const altitude = Math.hypot(position.current.x - body.position[0], position.current.y - body.position[1], position.current.z - body.position[2]) - body.radius
+        if (altitude < nearestAltitude) {
+          nearestAltitude = altitude
+          nearest = body
+        }
+      }
+      if (nearest) {
+        const blend = landingBlend(nearestAltitude, gameStats.arrival.phase)
+        if (blend > 0) {
+          landingCenter.set(...nearest.position)
+          landingCameraPose(position.current, landingCenter, quaternion.current, landingPosition, landingQuaternion)
+          camera.position.lerp(landingPosition, blend)
+          camera.quaternion.slerp(landingQuaternion, blend)
+          camera.up.lerp(landingNormal.copy(position.current).sub(landingCenter).normalize(), blend).normalize()
+        }
+        landingCenter.set(...nearest.position)
+        clampAboveSurface(camera.position, landingCenter, nearest.radius)
+      }
       // Re-entry rattles the camera
       if (shipState.heat > 0.05) shakeCamera(camera, shipState.heat * 0.18)
     } else {
