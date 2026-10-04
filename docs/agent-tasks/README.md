@@ -19,7 +19,7 @@ powershell -ExecutionPolicy Bypass -File docs\agent-tasks\new-worktree.ps1 -Task
 
 ### Prompt มาตรฐาน (ก๊อปไปวางได้เลย)
 ```
-คุณทำงานในโปรเจกต์ CosmoHaven (C:\\cosmohaven)
+คุณทำงานในโปรเจกต์ CosmoHaven (C:\cosmohaven)
 1) อ่าน AGENTS.md (กฎของโค้ดและการทำงานร่วมกัน) ให้จบก่อน
 2) อ่าน docs/HANDOFF.md ส่วน "ข้อควรระวัง" และ "สิ่งที่ยังไม่ได้ตรวจ"
 3) ทำงานตามไฟล์ docs/agent-tasks/<ชื่อไฟล์งาน>.md เท่านั้น — ทำเฉพาะขอบเขตที่ระบุ
